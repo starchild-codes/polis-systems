@@ -212,22 +212,22 @@ function CollectorsPage() {
               className="h-9 pl-8"
             />
           </div>
-          <Select value={status} onValueChange={(v) => setStatus(v as CollectorStatus | "all")}>
-            <SelectTrigger className="h-9 w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <Select className="!w-[9.5rem]" value={status} onValueChange={(v) => setStatus(v as CollectorStatus | "all")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               {COLLECTOR_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={zone} onValueChange={(v) => setZone(v as Zone | "all")}>
-            <SelectTrigger className="h-9 w-32"><SelectValue placeholder="Zone" /></SelectTrigger>
+          <Select className="!w-32" value={zone} onValueChange={(v) => setZone(v as Zone | "all")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Zone" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All zones</SelectItem>
               {zoneNames.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={type} onValueChange={(v) => setType(v as CollectorType | "all")}>
-            <SelectTrigger className="h-9 w-40"><SelectValue placeholder="Type" /></SelectTrigger>
+          <Select className="!w-40" value={type} onValueChange={(v) => setType(v as CollectorType | "all")}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
               {COLLECTOR_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
