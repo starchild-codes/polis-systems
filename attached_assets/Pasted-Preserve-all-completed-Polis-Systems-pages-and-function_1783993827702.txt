@@ -1,0 +1,155 @@
+Preserve all completed Polis Systems pages and functionality.
+
+Modify only:
+
+Collectors page
+Collector-related shared mock-data utilities
+
+Do not connect Supabase.
+Do not redesign Overview, Tasks, Review, Reports, Settings, or Login.
+
+Header
+
+Title:
+
+Collectors
+
+Subtitle:
+
+Manage field collectors and monitor operational participation
+
+Primary action:
+
+Add Collector
+
+Summary metrics
+
+Add:
+
+Total Collectors
+Active
+Pending Registration
+Inactive or Suspended
+
+Derive all counts from centralized collector data.
+
+Search and filters
+
+Add:
+
+Search by name, phone number, or zone
+Status filter
+Zone filter
+Collector type filter
+Clear filters
+Collector table
+
+Include:
+
+Collector
+Phone
+Zone
+Status
+Tasks Assigned
+Tasks Accepted
+Tasks Completed
+Approval Rate
+Last Active
+Actions
+
+Use compact rows and natural date formatting.
+
+Add Collector flow
+
+Add Collector must open a polished modal or drawer.
+
+Required:
+
+Full name
+Phone number with country code
+Zone
+Status
+
+Optional:
+
+Collector type
+Organization affiliation
+Preferred language
+Internal notes
+
+Validate:
+
+Name is required.
+Phone must be in E.164-style format.
+Phone number must be unique.
+Zone is required.
+
+On success:
+
+Add the collector to centralized mock state.
+Show a toast.
+Make the collector immediately available in task assignment dropdowns.
+Edit and status actions
+
+Implement:
+
+Edit collector
+Activate
+Deactivate
+Suspend
+Restore pending registration
+
+Require confirmation before suspension or deactivation.
+
+Do not permanently delete collectors.
+
+Collector detail drawer
+
+Show:
+
+Name
+Phone
+Zone
+Status
+Collector type
+Preferred language
+Registration date
+Last active
+Tasks assigned
+Tasks accepted
+Tasks declined
+Tasks submitted
+Tasks approved
+Approval rate
+Recent task history
+Internal notes
+
+Calculate performance from task and submission data rather than using unrelated hardcoded totals.
+
+Activity status
+
+A collector is operationally active if they accepted, submitted, or completed a task in the previous 14 days.
+
+Keep account status and recent-activity status visually distinct where useful.
+
+Empty states
+
+Add:
+
+No collectors added
+No collectors matching filters
+No task history for a collector
+Technical requirements
+Centralize collector state.
+Keep Tasks assignment options synchronized.
+Ensure Overview active-collector metrics remain correct.
+Run the build.
+Do not add a backend.
+
+After implementation, report:
+
+Files changed
+Functional collector actions
+Validation rules
+Cross-page synchronization
+Build result

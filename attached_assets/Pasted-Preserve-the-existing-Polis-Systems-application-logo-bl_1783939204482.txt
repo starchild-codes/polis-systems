@@ -1,0 +1,153 @@
+Preserve the existing Polis Systems application, logo, blue institutional design, routing, component structure, and mock-data architecture.
+
+Modify only:
+
+the Overview page
+the shared mock dataset needed to support the Overview page
+
+Do not redesign the entire app.
+Do not connect Supabase.
+Do not alter the Tasks, Review, Collectors, Reports, Settings, or Login page layouts except where shared mock-data consistency requires it.
+
+Build a polished, data-consistent Polis Systems Operations Overview page.
+
+Page header:
+
+Title: Operations Overview
+Subtitle: Monitor cleanup assignments, collector activity, and verified environmental impact
+Primary action: Create Task
+Secondary action: Export Report
+
+The Create Task button may route to the Tasks page or open the existing task form if already available.
+
+Add these primary metrics:
+
+Open Tasks
+Awaiting Review
+Approved Tasks
+Active Collectors
+
+Add these secondary metrics:
+
+Completion Rate
+Acceptance Rate
+Estimated Waste Collected
+Overdue Tasks
+
+All values must be calculated from one centralized mock dataset in src/lib/mock-data.ts.
+
+Do not use random decorative trends like “+11%” unless the mock dataset genuinely supports the comparison.
+
+Add a section titled Cleanup Activity showing the previous 7 days with:
+
+Assigned tasks
+Submitted tasks
+Approved tasks
+
+Use a restrained institutional palette:
+
+primary blue
+navy
+cyan
+teal for positive outcomes
+
+Do not use rainbow charts.
+
+Add a Task Status Breakdown section for:
+
+Draft
+Assigned
+Accepted
+In Progress
+Submitted
+Approved
+Declined
+Rejected
+Canceled
+
+Use either a horizontal stacked bar or compact donut chart with a clear legend and counts.
+
+Add a prominent Tasks Needing Review section showing up to five submitted tasks awaiting approval.
+
+Include:
+
+Task title
+Collector
+Zone
+Submission time
+Waste type
+Quantity estimate
+Priority
+Review button
+
+The Review button must navigate to the Review page and preserve enough task identity for later detail handling.
+
+Add a Recent Activity section using natural-language events such as:
+
+Priya Sharma accepted Market Lane Cleanup
+Ravi Kumar submitted proof for Canal Road Waste Removal
+Central Ward Drainage Cleanup was approved
+
+Each item should include a timestamp and suitable icon.
+
+Add a Cleanup Locations section with four pilot zones.
+
+Each zone should show:
+
+Zone name
+Open tasks
+Completed tasks
+Main hotspot type
+Highest-priority task
+
+Add a Collector Activity section with:
+
+Active collectors
+Pending registration
+Collectors assigned today
+Collectors with submissions awaiting review
+
+Also show three top active collectors with:
+
+Name
+Zone
+Tasks completed
+Approval rate
+Last active
+
+Empty states:
+
+No tasks
+No submissions awaiting review
+No recent activity
+
+Use this exact no-task message:
+
+No cleanup tasks have been created yet. Create your first task to begin coordinating field operations.
+
+Design requirements:
+
+Preserve the current Polis Systems logo and blue institutional brand.
+Use white and pale-blue surfaces.
+Avoid excessive card nesting.
+Reduce unnecessary empty space.
+Keep tables and lists compact.
+Maintain consistent alignment and spacing.
+Keep the page polished at 1440px, 1024px, and 768px widths.
+Do not create generic AI-dashboard styling.
+
+Technical requirements:
+
+Keep all mock entities centralized in src/lib/mock-data.ts.
+Derive metrics from data instead of hardcoding totals.
+Ensure submitted and approved counts are mutually consistent.
+Ensure active collector counts match the collector dataset.
+Keep the build clean.
+
+After implementation:
+
+Run the build.
+Report which files changed.
+Explain how each metric is calculated.
+Confirm no backend was added.
+Confirm no other page was redesigned.

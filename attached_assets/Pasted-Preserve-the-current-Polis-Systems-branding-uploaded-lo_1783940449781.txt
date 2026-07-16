@@ -1,0 +1,259 @@
+Preserve the current Polis Systems branding, uploaded logo, blue institutional visual system, sidebar, header, Overview page, shared mock data, and all existing routes.
+
+Modify only:
+
+the Tasks page
+the Create Task flow
+task-related shared mock-data utilities
+
+Do not connect Supabase yet.
+Do not redesign the Overview, Review, Collectors, Reports, Settings, or Login pages.
+
+Build a polished and fully functional mock-data Tasks workspace for Polis Systems.
+
+Page header
+
+Use:
+
+Title: Cleanup Tasks
+Subtitle: Create, assign, and monitor field cleanup operations
+Primary action: Create Task
+Summary strip
+
+Add compact task counts for:
+
+All
+Draft
+Assigned
+In Progress
+Awaiting Review
+Approved
+Overdue
+
+Derive every value from the centralized task dataset.
+
+Filters and search
+
+Add:
+
+Search by task title, location, or collector
+Status filter
+Collector filter
+Zone filter
+Priority filter
+Date filter
+Clear filters action
+
+Filters must work together and update the visible result count.
+
+Task table
+
+Include these columns:
+
+Task
+Status
+Priority
+Hotspot type
+Assigned collector
+Zone
+Due date
+Last updated
+Actions
+
+Requirements:
+
+Use compact professional rows.
+Use the existing status-badge component.
+Format dates naturally.
+Make overdue tasks visibly identifiable without overwhelming the table.
+Clicking a row should open a task detail drawer.
+Avoid excessive row height.
+Add horizontal scrolling at smaller widths.
+Create Task flow
+
+The Create Task button must open a multi-section modal, drawer, or side panel.
+
+Required fields:
+
+Title
+Description
+Hotspot type
+Priority
+Assigned collector
+Due date
+Address
+Latitude
+Longitude
+Zone
+
+Optional fields:
+
+Estimated quantity
+Instructions
+Reference photo placeholder
+Internal notes
+
+Hotspot type options:
+
+Illegal dumping
+Plastic litter
+Organic waste
+Construction debris
+Market waste
+Drainage or canal waste
+Mixed waste
+Other
+
+Priority options:
+
+Low
+Medium
+High
+Urgent
+
+Behaviour:
+
+A task may be saved as draft without a collector.
+A task cannot be assigned unless a collector is selected.
+Validate title, hotspot type, priority, zone, and due date.
+Show inline validation messages.
+On successful creation, add the task to the shared mock dataset.
+Newly created tasks must immediately appear in the table.
+Add a corresponding mock task-created event.
+Show a success toast.
+Task detail drawer
+
+Show:
+
+Title
+Status
+Description
+Hotspot type
+Priority
+Collector
+Collector phone
+Due date
+Address
+Coordinates
+Zone
+Created by
+Created timestamp
+Last updated
+Event history
+Submission summary if one exists
+Before and after photo placeholders if available
+Status-aware actions
+
+Draft:
+
+Edit
+Assign
+Cancel
+
+Assigned:
+
+View details
+Reassign
+Cancel
+
+Accepted:
+
+View progress
+Cancel
+
+In Progress:
+
+View progress
+Cancel
+
+Submitted:
+
+Review submission
+
+Approved:
+
+View submission
+Export record
+
+Declined:
+
+Reassign
+Cancel
+
+Rejected:
+
+Request resubmission
+Cancel
+
+Canceled:
+
+View only
+
+For this mock-data phase, actions should update local shared state and create task events where appropriate.
+
+Edit, assign, reassign, and cancel
+
+Implement:
+
+Edit task
+Assign collector
+Reassign collector
+Cancel task with confirmation
+
+Do not allow arbitrary status jumps.
+
+Use only these mock transitions:
+
+draft → assigned
+assigned → canceled
+declined → assigned
+accepted → canceled
+in_progress → canceled
+rejected → canceled
+
+Other transitions will later come from WhatsApp or Review.
+
+Event history
+
+Each task should show natural-language activity such as:
+
+Task created by Ananya Rao
+Assigned to Ravi Kumar
+Due date changed
+Task canceled by operator
+
+Avoid technical event labels in the UI.
+
+Empty states
+
+Add states for:
+
+No tasks at all
+No tasks matching filters
+No active collectors available for assignment
+
+Use clear and practical wording.
+
+Design requirements
+Preserve the current institutional blue brand.
+Keep tables compact and professional.
+Use moderate corner radii.
+Avoid generic AI SaaS styling.
+Keep forms clean and logically grouped.
+Make the task drawer readable at desktop and tablet sizes.
+Do not add a complex map yet; show address and coordinates cleanly.
+Technical requirements
+Keep task data centralized in src/lib/mock-data.ts.
+Do not duplicate task arrays inside the page.
+Keep task counts and Overview metrics synchronized.
+Do not add a backend or Supabase.
+Run the build after implementation.
+
+After implementation, report:
+
+Files changed
+Which task actions are functional
+Validation rules implemented
+How shared mock data stays synchronized with Overview
+Confirmation that no backend was added
+Confirmation that no page outside Tasks and shared mock-data utilities was visually redesigned

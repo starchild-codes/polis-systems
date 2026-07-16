@@ -1,0 +1,1 @@
+- [useSyncExternalStore SSR](use-sync-external-store-ssr.md) — always pass a getServerSnapshot arg or SSR crashes with "Missing getServerSnapshot".

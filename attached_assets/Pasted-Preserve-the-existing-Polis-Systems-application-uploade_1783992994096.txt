@@ -1,0 +1,186 @@
+Preserve the existing Polis Systems application, uploaded logo, institutional blue design, navigation, Overview page, Tasks page, and centralized mock-data architecture.
+
+Modify only:
+
+Review page
+Submission-related mock-data types and utilities
+Cross-page navigation required to open the correct submission
+
+Do not connect Supabase.
+Do not redesign any completed page.
+
+Page header
+
+Title:
+
+Submission Review
+
+Subtitle:
+
+Verify cleanup evidence and approve or return field submissions
+
+Add summary metrics derived from centralized mock data:
+
+Awaiting Review
+Approved
+Rejected
+Average Review Time
+Review tabs
+
+Add:
+
+Pending
+Approved
+Rejected
+All
+
+Pending submissions must appear first and newest first.
+
+Search and filters
+
+Add working filters for:
+
+Search by task title, collector, zone, or waste type
+Zone
+Priority
+Review status
+Submission date
+Clear filters
+Submission queue
+
+Use a compact professional table with:
+
+Task
+Collector
+Zone
+Submitted time
+Waste type
+Quantity estimate
+Priority
+Review status
+Action
+
+Clicking a row or Review button must open the correct submission.
+
+Review-detail interface
+
+Use a wide drawer or modal.
+
+Show:
+
+Task information
+Title
+Description
+Hotspot type
+Priority
+Assigned location
+Zone
+Due date
+Collector information
+Name
+Phone number
+Zone
+Tasks completed
+Approval rate
+Proof of work
+Large before-photo panel
+Large after-photo panel
+Waste type
+Quantity estimate
+Collector notes
+Submission time
+Submission coordinates
+Assigned task coordinates
+
+Use reliable local mock image assets or stable placeholders. Do not rely on random external images.
+
+Verification checklist
+
+Include operator-checkable items:
+
+Before photo present
+After photo present
+Visible improvement shown
+Waste type provided
+Quantity estimate provided
+Submission near assigned location
+Submission near the due date
+
+Allow the operator to toggle checklist items.
+
+Approve flow
+
+When Approve is clicked:
+
+Require confirmation.
+Set submission review status to approved.
+Set the related task status to approved.
+Save reviewer as Ananya Rao.
+Save review timestamp.
+Add a natural-language task event.
+Show a success toast.
+Remove it from the Pending tab.
+Keep it visible in Approved and All.
+Update Overview counts through shared state.
+Reject flow
+
+Require a rejection reason.
+
+Options:
+
+Missing before photo
+Missing after photo
+Photos unclear
+Wrong location
+Cleanup incomplete
+Quantity estimate missing
+Waste type missing
+Duplicate submission
+Other
+
+If Other is selected, require a custom explanation.
+
+On rejection:
+
+Set submission review status to rejected.
+Set the related task status to rejected.
+Save reviewer, timestamp, and reason.
+Add a natural-language event.
+Show a success toast.
+Remove it from Pending.
+Keep it visible in Rejected and All.
+Reviewed submission view
+
+Approved and rejected submissions must open in read-only mode and show:
+
+Review result
+Reviewer
+Review time
+Rejection reason where applicable
+Cross-page behaviour
+Review buttons on Overview should open or highlight the matching submission.
+Review Submission actions from Tasks should open the matching submission.
+Approving or rejecting must update the related task everywhere.
+Empty states
+
+Use this pending-state message:
+
+No submissions are waiting for review. New field proof will appear here when collectors complete tasks.
+
+Also create states for no approved submissions, no rejected submissions, and no filter results.
+
+Technical requirements
+Keep submission data centralized.
+Do not create page-local duplicate arrays.
+Keep tasks and submissions synchronized.
+Preserve the current design system.
+Run the build.
+
+After implementation, report:
+
+Files changed
+Approval and rejection behaviours
+Cross-page linking implemented
+State synchronization approach
+Build result
+Confirmation that no backend was added

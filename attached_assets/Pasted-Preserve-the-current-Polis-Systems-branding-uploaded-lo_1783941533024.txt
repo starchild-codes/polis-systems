@@ -1,0 +1,194 @@
+Preserve the current Polis Systems branding, uploaded logo, blue institutional visual system, sidebar, header, Overview page, Tasks page, shared mock data, and existing routes.
+
+Modify only:
+
+the Review page
+submission-related shared mock-data utilities
+
+Do not connect Supabase yet.
+Do not redesign the Overview, Tasks, Collectors, Reports, Settings, or Login pages.
+
+Build a polished and functional mock-data submission review workspace for Polis Systems.
+
+Page header
+
+Use:
+
+Title: Submission Review
+Subtitle: Verify cleanup proof and approve or return field submissions
+
+Add compact summary metrics for:
+
+Awaiting Review
+Approved
+Rejected
+Average Review Time
+
+Derive all values from the centralized mock dataset.
+
+Submission queue
+
+Add:
+
+Search by task title, collector, zone, or waste type
+Filter by zone
+Filter by priority
+Filter by submission date
+Filter by review status
+Clear filters action
+
+Show a compact table with:
+
+Task
+Collector
+Zone
+Submitted
+Waste type
+Quantity estimate
+Priority
+Review status
+Action
+
+Default view should show pending submissions first, newest first.
+
+Clicking a row or Review button should open the review detail interface.
+
+Review detail interface
+
+Use a wide drawer, modal, or dedicated detail panel.
+
+Show:
+
+Task information
+Task title
+Description
+Hotspot type
+Priority
+Original task location
+Due date
+Zone
+Collector information
+Name
+Phone
+Zone
+Tasks completed
+Approval rate
+Proof of work
+Large before-photo panel
+Large after-photo panel
+Waste type
+Quantity estimate
+Collector notes
+Submission time
+Submission coordinates or location
+
+Use realistic placeholder images from the existing mock assets or stable local placeholders. Do not use random remote images that may fail.
+
+Verification checklist
+
+Add a compact checklist to help the operator verify:
+
+Before photo is present
+After photo is present
+Visible improvement is shown
+Waste type is provided
+Quantity estimate is provided
+Submission location is reasonably close to task location
+Submission was made near the due date
+
+For mock data, prefill these checks sensibly but allow the operator to toggle them.
+
+Approve flow
+
+When the operator clicks Approve:
+
+Require confirmation.
+Set submission review status to approved.
+Set task status to approved.
+Save mock reviewer as Ananya Rao.
+Save review timestamp.
+Add a natural-language task event.
+Show success toast.
+Remove it from the pending queue.
+Update Overview and Reports metrics through the shared mock state.
+Reject flow
+
+When the operator clicks Reject:
+
+Require a rejection reason.
+Allow predefined reasons:
+Missing before photo
+Missing after photo
+Photos unclear
+Wrong location
+Cleanup incomplete
+Quantity estimate missing
+Waste type missing
+Duplicate submission
+Other
+If Other is selected, require a custom note.
+Set submission review status to rejected.
+Set task status to rejected.
+Save reviewer and timestamp.
+Save rejection reason.
+Add a task event.
+Show success toast.
+Remove it from the pending queue.
+Reviewed submissions
+
+Allow users to switch between:
+
+Pending
+Approved
+Rejected
+All
+
+Approved and rejected submissions should remain viewable in read-only mode.
+
+For rejected submissions, show:
+
+Rejection reason
+Reviewer
+Review time
+Resubmission status if available
+Cross-page behaviour
+Clicking Review from Overview must open the correct submission or at minimum navigate to Review with the task highlighted.
+Clicking Review Submission from Tasks must open the matching submission.
+Approving or rejecting must update task status everywhere.
+Empty states
+
+Add polished states for:
+
+No pending submissions
+No approved submissions
+No rejected submissions
+No results matching filters
+
+Use this exact pending-empty message:
+
+No submissions are waiting for review. New field proof will appear here when collectors complete tasks.
+
+Design requirements
+Preserve the current institutional blue brand.
+Make before and after images large enough for meaningful comparison.
+Avoid tiny thumbnails as the primary review view.
+Use compact metadata blocks.
+Use green only for approval states and red only for rejection or destructive actions.
+Keep the layout polished at 1440px, 1024px, and 768px.
+Avoid excessive scrolling inside nested panels.
+Technical requirements
+Keep submissions centralized in src/lib/mock-data.ts.
+Do not duplicate submission arrays inside the page.
+Keep task and submission states synchronized.
+Do not add Supabase or any backend.
+Run the build after implementation.
+
+After implementation, report:
+
+Files changed
+Approve and reject behaviours implemented
+Cross-page links supported
+How task and submission state remain synchronized
+Build result
+Confirmation that no backend was added
+Confirmation that no unrelated page was visually redesigned

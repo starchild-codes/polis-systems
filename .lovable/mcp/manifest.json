@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "polis-systems-mcp",
+      "version": "0.1.0",
+      "title": "Polis Systems MCP"
+    },
+    "tools": [
+      {
+        "name": "get_operations_summary",
+        "title": "Operations summary",
+        "description": "Return top-level Polis Systems operational KPIs from the demo dataset: task counts by status, collector counts, waste collected, completion/acceptance rates, and submission review stats.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tasks",
+        "title": "List sanitation tasks",
+        "description": "List cleanup tasks in the Polis Systems demo dataset. Optionally filter by zone, status, or priority.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "zone": {
+              "type": "string",
+              "enum": [
+                "North",
+                "South",
+                "East",
+                "West",
+                "Central"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "open",
+                "assigned",
+                "accepted",
+                "in_progress",
+                "submitted",
+                "approved",
+                "declined",
+                "rejected",
+                "canceled"
+              ]
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "urgent"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Default 50."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_collectors",
+        "title": "List collectors",
+        "description": "List collectors in the Polis Systems demo dataset (name, phone, zone, status, type, organisation). Optionally filter by zone or status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "zone": {
+              "type": "string",
+              "enum": [
+                "North",
+                "South",
+                "East",
+                "West",
+                "Central"
+              ],
+              "description": "Filter to one operational zone."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "suspended",
+                "pending"
+              ],
+              "description": "Filter by account status."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Maximum number of collectors to return (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

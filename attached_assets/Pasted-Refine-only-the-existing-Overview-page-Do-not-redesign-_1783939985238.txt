@@ -1,0 +1,119 @@
+Refine only the existing Overview page. Do not redesign the application or add new features.
+
+Preserve:
+
+Polis Systems branding and uploaded logo
+Blue institutional visual system
+Sidebar and header
+Existing Overview sections
+Existing routing
+
+Fix the following:
+
+1. Reduce dashboard length
+
+Make the Overview page substantially more compact.
+
+Show a maximum of 3 Tasks Needing Review.
+Show a maximum of 5 Recent Activity events.
+Show a maximum of 5 zones.
+Show exactly 3 top collectors.
+Add “View all” links where appropriate.
+Reduce unnecessary padding and vertical gaps.
+The complete dashboard should feel like an operational snapshot rather than a long report.
+2. Remove the large blank area
+
+The Recent Activity and Cleanup Locations sections currently have unequal heights, creating a large empty white area before Collector Activity.
+
+Restructure this section using a responsive grid so both columns align naturally.
+
+Options:
+
+Place Recent Activity and Cleanup Locations in equal-height cards.
+Limit each section’s visible rows.
+Move Collector Activity directly underneath without blank space.
+
+Do not force fixed heights that cause overflow.
+
+3. Correct all mock-data inconsistencies
+
+Ensure every displayed number is derived from src/lib/mock-data.ts.
+
+Current inconsistencies to fix:
+
+The top metric says 3 tasks awaiting review, while Collector Activity says 2. If the bottom number refers to collectors rather than tasks, rename it to Collectors awaiting review decisions or Collectors with pending submissions.
+The pilot contains only approximately 22 tasks, but individual collectors display 201, 154 and 128 completed tasks. Replace these with realistic values derived from the current task dataset.
+Ensure active collector counts, approved tasks, submitted tasks, task status totals and zone totals all reconcile.
+
+Do not hardcode display-only totals.
+
+4. Correct metric definitions
+
+Use:
+
+Open Tasks: tasks that are not approved, rejected, declined or canceled
+Awaiting Review: tasks with status submitted
+Approved Tasks: tasks with status approved
+Active Collectors: collectors with active status
+Completion Rate: submitted, approved or rejected tasks divided by assigned tasks, excluding drafts and canceled tasks
+Acceptance Rate: accepted-or-later tasks divided by accepted-or-later plus declined tasks
+Estimated Waste Collected: sum of approved submission quantities only
+Overdue Tasks: past-due tasks that are not approved, canceled, declined or rejected
+
+Display concise user-friendly explanations. Do not show confusing mathematical wording.
+
+5. Improve Tasks Needing Review layout
+
+Convert it into a compact, clearly aligned table or structured list with:
+
+Task
+Collector and zone
+Submitted time
+Waste type and quantity
+Priority
+Review action
+
+Prevent information from floating loosely across the full width.
+
+6. Format dates naturally
+
+Replace raw timestamps such as 2026-07-13 09:30 with user-friendly formats:
+
+Today, 9:30 AM
+Yesterday, 6:00 PM
+12 Jul, 5:04 PM
+
+Keep the original ISO values in the data but format them in the interface.
+
+7. Improve section balance
+
+Keep:
+
+Cleanup Activity
+Task Status Breakdown
+Tasks Needing Review
+Recent Activity
+Cleanup Locations
+Collector Activity
+
+But reduce visual density and use consistent card borders, headings, spacing and row heights.
+
+Do not add new sections.
+
+8. Responsive behaviour
+
+At 1440px, the dashboard should use the available width without oversized empty space.
+
+At 1024px and 768px:
+
+Metric cards should wrap cleanly.
+Tables should scroll horizontally if necessary.
+Sections should stack without overlap.
+
+After implementing:
+
+Run the build.
+Report every data inconsistency corrected.
+Explain the revised metric formulas.
+Confirm no backend was added.
+Confirm no page other than Overview and shared mock-data utilities was visually changed.
