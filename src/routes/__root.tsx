@@ -1,45 +1,46 @@
-import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { createRootRouteWithContext, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth, type AuthContextType } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Toaster } from "@/components/ui/sonner";
-import { useState } from "react";
 
 type RouterContext = { auth: AuthContextType };
 
 function AccessPendingScreen({
-  email, role, onSignOut,
-}: { email: string | null; role: string | null; onSignOut: () => void }) {
-  const suspended = role && role !== "pending";
+  email, profileError, onSignOut,
+}: { email: string | null; profileError: string | null; onSignOut: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
         <h1 className="text-xl font-semibold text-foreground">
-          {suspended ? "Access not permitted" : "Access pending approval"}
+          Your account is awaiting approval
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {suspended
-            ? "Your account does not have permission to open the Polis Systems dashboard."
-            : "Your account is signed in but has not been granted access yet. An administrator needs to approve you as an operator or admin."}
+          {profileError
+            ? "We could not verify your organization profile. Dashboard access remains safely blocked; please contact an administrator."
+            : "An administrator must approve your account as an operator or admin before you can open the operations dashboard."}
         </p>
         {email && <p className="mt-4 text-xs text-muted-foreground">Signed in as <span className="font-medium text-foreground">{email}</span></p>}
         <button onClick={onSignOut} className="mt-6 w-full rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors">
           Sign out
         </button>
+        <Link to="/" className="mt-3 inline-flex text-sm font-medium text-primary hover:underline">
+          Return to the public site
+        </Link>
       </div>
     </div>
   );
 }
 
 function ProtectedShell({ children }: { children: ReactNode }) {
-  const { loading, session, profile, profileLoading, isAuthorized, signOut, user } = useAuth();
+  const { loading, session, profileLoading, profileError, isAuthorized, signOut, user } = useAuth();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (!loading && !session) {
-      router.navigate({ to: "/login", search: { mode: "signin" } });
+      router.navigate({ to: "/login" });
     }
   }, [loading, session, router]);
 
@@ -61,7 +62,7 @@ function ProtectedShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  if (loading || (session && profileLoading && !profile)) {
+  if (loading || (session && profileLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted">
         <div className="text-sm font-medium text-muted-foreground">Loading…</div>
@@ -75,8 +76,8 @@ function ProtectedShell({ children }: { children: ReactNode }) {
     return (
       <AccessPendingScreen
         email={user?.email ?? null}
-        role={profile?.role ?? null}
-        onSignOut={() => { void signOut().then(() => router.navigate({ to: "/login", search: { mode: "signin" } })); }}
+        profileError={profileError}
+        onSignOut={() => { void signOut().then(() => router.navigate({ to: "/login" })); }}
       />
     );
   }

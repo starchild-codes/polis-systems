@@ -59,7 +59,7 @@ export function AppHeader() {
                 <button
                   onClick={async () => {
                     await signOut();
-                    router.navigate({ to: "/login", search: { mode: "signin" } });
+                    router.navigate({ to: "/login" });
                   }}
                   className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-accent"
                 >

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,12 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [{ title: "Sign In — Polis Systems" }],
   }),
-  component: LoginPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: (search.mode as string) || "signin",
-  }),
+  component: () => <AuthPage mode="signin" />,
 });
 
-function LoginPage() {
-  const { mode } = Route.useSearch();
+export function AuthPage({ mode }: { mode: "signin" | "signup" }) {
   const navigate = useNavigate();
-  const { loading, session, isAuthorized, signIn, signUp } = useAuth();
+  const { loading, session, profileLoading, isAuthorized, signIn, signUp } = useAuth();
   const isSignUp = mode === "signup";
 
   const [email, setEmail] = useState("");
@@ -27,15 +23,14 @@ function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
-  const authChecking = loading || !!session;
+  const authChecking = loading || Boolean(session && profileLoading);
 
   useEffect(() => {
-    if (loading) return;
-    if (session && isAuthorized) {
-      navigate({ to: "/overview" });
-    }
-  }, [loading, session, isAuthorized, navigate]);
+    if (loading || profileLoading || !session) return;
+    navigate({ to: isAuthorized ? "/overview" : "/awaiting-approval", replace: true });
+  }, [loading, profileLoading, session, isAuthorized, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,12 +38,13 @@ function LoginPage() {
     setSubmitting(true);
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password, fullName);
+        const { error, requiresEmailConfirmation } = await signUp(email, password, fullName);
         if (error) {
           setError(error);
+        } else if (requiresEmailConfirmation) {
+          setCheckEmail(true);
         } else {
-          setError("Account created! An admin needs to grant you operator access before you can use the dashboard.");
-          setEmail(""); setPassword(""); setFullName("");
+          navigate({ to: "/awaiting-approval", replace: true });
         }
       } else {
         const { error } = await signIn(email, password);
@@ -63,6 +59,24 @@ function LoginPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+            <ShieldCheck className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Confirm your email, then sign in. Your account will remain awaiting approval until an administrator grants access.
+          </p>
+          <Button asChild className="mt-6 w-full"><Link to="/login">Return to sign in</Link></Button>
+          <Link to="/" className="mt-4 inline-flex text-sm font-medium text-primary hover:underline">Return to the public site</Link>
+        </div>
       </div>
     );
   }
@@ -112,13 +126,11 @@ function LoginPage() {
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {isSignUp ? "Already have an account?" : "Need access?"}{" "}
-          <button
-            className="font-medium text-primary hover:underline"
-            onClick={() => navigate({ to: "/login", search: { mode: isSignUp ? "signin" : "signup" } })}
-          >
+          <Link className="font-medium text-primary hover:underline" to={isSignUp ? "/login" : "/signup"}>
             {isSignUp ? "Sign in" : "Request access"}
-          </button>
+          </Link>
         </p>
+        <p className="mt-3 text-center text-xs"><Link to="/" className="text-muted-foreground hover:text-foreground">Back to the public site</Link></p>
       </div>
     </div>
   );

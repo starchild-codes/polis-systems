@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type UserRole = "admin" | "operator" | "pending";
 
-interface Profile {
+export interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
@@ -17,9 +17,10 @@ export interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   profileLoading: boolean;
+  profileError: string | null;
   isAuthorized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: string | null; requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -30,14 +31,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const user = session?.user ?? null;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        setSession(error ? null : data.session);
+      })
+      .catch(() => setSession(null))
+      .finally(() => setLoading(false));
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
@@ -50,8 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       setProfile(null);
+      setProfileError(null);
+      setProfileLoading(false);
       return;
     }
+    let active = true;
+    setProfile(null);
+    setProfileError(null);
     setProfileLoading(true);
     (async () => {
       const { data, error } = await supabase
@@ -59,13 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("id, email, full_name, role")
         .eq("id", user.id)
         .maybeSingle();
+      if (!active) return;
       if (error) {
         setProfile(null);
+        setProfileError(error.message);
       } else {
         setProfile(data as Profile | null);
+        setProfileError(null);
       }
       setProfileLoading(false);
     })();
+    return () => { active = false; };
   }, [user]);
 
   const isAuthorized = profile?.role === "admin" || profile?.role === "operator";
@@ -76,17 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, fullName?: string) {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
-    return { error: error?.message ?? null };
+    return {
+      error: error?.message ?? null,
+      requiresEmailConfirmation: !error && !data.session,
+    };
   }
 
   async function signOut() {
     await supabase.auth.signOut();
     setProfile(null);
+    setProfileError(null);
   }
 
   return (
@@ -97,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         profile,
         profileLoading,
+        profileError,
         isAuthorized,
         signIn,
         signUp,

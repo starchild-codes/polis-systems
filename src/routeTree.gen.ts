@@ -18,10 +18,15 @@ import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectorsRouteImport } from './routes/collectors'
+import { Route as AwaitingApprovalRouteImport } from './routes/awaiting-approval'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardTasksRouteImport } from './routes/dashboard/tasks'
 import { Route as DashboardSubmissionsRouteImport } from './routes/dashboard/submissions'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardReviewRouteImport } from './routes/dashboard/review'
+import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
+import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
 import { Route as DashboardCollectorsRouteImport } from './routes/dashboard/collectors'
 
 const TasksRoute = TasksRouteImport.update({
@@ -69,6 +74,11 @@ const CollectorsRoute = CollectorsRouteImport.update({
   path: '/collectors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AwaitingApprovalRoute = AwaitingApprovalRouteImport.update({
+  id: '/awaiting-approval',
+  path: '/awaiting-approval',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -89,6 +99,26 @@ const DashboardSubmissionsRoute = DashboardSubmissionsRouteImport.update({
   path: '/submissions',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReviewRoute = DashboardReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportsRoute = DashboardReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOverviewRoute = DashboardOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardCollectorsRoute = DashboardCollectorsRouteImport.update({
   id: '/collectors',
   path: '/collectors',
@@ -97,6 +127,7 @@ const DashboardCollectorsRoute = DashboardCollectorsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
@@ -107,12 +138,17 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
   '/dashboard/tasks': typeof DashboardTasksRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
@@ -122,6 +158,10 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
   '/dashboard/tasks': typeof DashboardTasksRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -129,6 +169,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
@@ -139,6 +180,10 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
+  '/dashboard/review': typeof DashboardReviewRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
   '/dashboard/tasks': typeof DashboardTasksRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -147,6 +192,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/awaiting-approval'
     | '/collectors'
     | '/dashboard'
     | '/login'
@@ -157,12 +203,17 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
+    | '/dashboard/overview'
+    | '/dashboard/reports'
+    | '/dashboard/review'
+    | '/dashboard/settings'
     | '/dashboard/submissions'
     | '/dashboard/tasks'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/awaiting-approval'
     | '/collectors'
     | '/login'
     | '/overview'
@@ -172,12 +223,17 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
+    | '/dashboard/overview'
+    | '/dashboard/reports'
+    | '/dashboard/review'
+    | '/dashboard/settings'
     | '/dashboard/submissions'
     | '/dashboard/tasks'
     | '/dashboard'
   id:
     | '__root__'
     | '/'
+    | '/awaiting-approval'
     | '/collectors'
     | '/dashboard'
     | '/login'
@@ -188,6 +244,10 @@ export interface FileRouteTypes {
     | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
+    | '/dashboard/overview'
+    | '/dashboard/reports'
+    | '/dashboard/review'
+    | '/dashboard/settings'
     | '/dashboard/submissions'
     | '/dashboard/tasks'
     | '/dashboard/'
@@ -195,6 +255,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AwaitingApprovalRoute: typeof AwaitingApprovalRoute
   CollectorsRoute: typeof CollectorsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
@@ -271,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/awaiting-approval': {
+      id: '/awaiting-approval'
+      path: '/awaiting-approval'
+      fullPath: '/awaiting-approval'
+      preLoaderRoute: typeof AwaitingApprovalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -299,6 +367,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSubmissionsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/review': {
+      id: '/dashboard/review'
+      path: '/review'
+      fullPath: '/dashboard/review'
+      preLoaderRoute: typeof DashboardReviewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reports': {
+      id: '/dashboard/reports'
+      path: '/reports'
+      fullPath: '/dashboard/reports'
+      preLoaderRoute: typeof DashboardReportsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/overview': {
+      id: '/dashboard/overview'
+      path: '/overview'
+      fullPath: '/dashboard/overview'
+      preLoaderRoute: typeof DashboardOverviewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/collectors': {
       id: '/dashboard/collectors'
       path: '/collectors'
@@ -311,6 +407,10 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardCollectorsRoute: typeof DashboardCollectorsRoute
+  DashboardOverviewRoute: typeof DashboardOverviewRoute
+  DashboardReportsRoute: typeof DashboardReportsRoute
+  DashboardReviewRoute: typeof DashboardReviewRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardSubmissionsRoute: typeof DashboardSubmissionsRoute
   DashboardTasksRoute: typeof DashboardTasksRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -318,6 +418,10 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCollectorsRoute: DashboardCollectorsRoute,
+  DashboardOverviewRoute: DashboardOverviewRoute,
+  DashboardReportsRoute: DashboardReportsRoute,
+  DashboardReviewRoute: DashboardReviewRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardSubmissionsRoute: DashboardSubmissionsRoute,
   DashboardTasksRoute: DashboardTasksRoute,
   DashboardIndexRoute: DashboardIndexRoute,
@@ -329,6 +433,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AwaitingApprovalRoute: AwaitingApprovalRoute,
   CollectorsRoute: CollectorsRoute,
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,

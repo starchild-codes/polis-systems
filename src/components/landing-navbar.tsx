@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 function Logo() {
   return (
@@ -16,6 +17,7 @@ function Logo() {
 }
 
 export function LandingNavbar() {
+  const { isAuthorized } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -59,16 +61,19 @@ export function LandingNavbar() {
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
+          {isAuthorized && (
+            <Link to="/overview" className="text-sm font-medium text-primary hover:text-primary-dark px-4 py-2 transition-colors">
+              Open dashboard
+            </Link>
+          )}
           <Link
             to="/login"
-            search={{ mode: "signin" }}
             className="text-sm font-medium text-navy-700 hover:text-navy-950 px-4 py-2 transition-colors"
           >
             Log In
           </Link>
           <Link
-            to="/login"
-            search={{ mode: "signup" }}
+            to="/signup"
             className="text-sm font-medium text-white bg-institutional-700 hover:bg-institutional-800 px-4 py-2 rounded-lg transition-colors"
           >
             Sign Up
@@ -105,16 +110,21 @@ export function LandingNavbar() {
             </a>
           ))}
           <div className="pt-3 border-t border-navy-100 flex flex-col gap-2">
+            {isAuthorized && (
+              <Link to="/overview" className="text-sm font-medium text-primary py-2" onClick={() => setMobileOpen(false)}>
+                Open dashboard
+              </Link>
+            )}
             <Link
               to="/login"
-              search={{ mode: "signin" }}
+              onClick={() => setMobileOpen(false)}
               className="text-sm font-medium text-navy-700 py-2"
             >
               Log In
             </Link>
             <Link
-              to="/login"
-              search={{ mode: "signup" }}
+              to="/signup"
+              onClick={() => setMobileOpen(false)}
               className="text-sm font-medium text-white bg-institutional-700 px-4 py-2.5 rounded-lg text-center"
             >
               Sign Up
