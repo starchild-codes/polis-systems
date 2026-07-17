@@ -27,7 +27,7 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
       <div
-        className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px] animate-fade-in"
+        className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px] animate-fade-in motion-reduce:animate-none"
         onClick={() => onOpenChange(false)}
       />
       {children}
@@ -46,7 +46,7 @@ export function SheetContent({ className, children, onOpenChange }: SheetContent
   return (
     <div
       className={cn(
-        "absolute inset-y-0 right-0 flex h-full w-full flex-col border-l border-border bg-background shadow-floating animate-slide-in-right sm:max-w-lg",
+        "absolute inset-y-0 right-0 flex h-full w-full flex-col border-l border-border/90 bg-background shadow-floating animate-slide-in-right motion-reduce:animate-none sm:max-w-lg",
         className,
       )}
     >
@@ -54,7 +54,7 @@ export function SheetContent({ className, children, onOpenChange }: SheetContent
         <button
           onClick={() => onOpenChange(false)}
           aria-label="Close panel"
-          className="focus-ring absolute right-4 top-4 z-10 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="focus-ring absolute right-4 top-4 z-10 rounded-lg border border-transparent p-1.5 text-muted-foreground transition-[color,background-color,border-color,transform] hover:scale-105 hover:border-border hover:bg-background hover:text-foreground motion-reduce:transform-none"
         >
           <X className="h-4 w-4" />
         </button>
@@ -65,7 +65,7 @@ export function SheetContent({ className, children, onOpenChange }: SheetContent
 }
 
 export function SheetHeader({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("border-b border-border bg-muted/20 px-5 py-5 sm:px-6", className)}>{children}</div>;
+  return <div className={cn("border-b border-border/80 bg-muted/[0.28] px-5 py-5 sm:px-6", className)}>{children}</div>;
 }
 
 export function SheetTitle({ className, children }: { className?: string; children: ReactNode }) {
@@ -82,7 +82,7 @@ export function SheetBody({ className, children }: { className?: string; childre
 
 export function SheetFooter({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn("flex items-center justify-end gap-2 border-t border-border bg-muted/20 px-5 py-4 sm:px-6", className)}>
+    <div className={cn("flex items-center justify-end gap-2 border-t border-border/80 bg-background/95 px-5 py-4 shadow-[0_-8px_24px_hsl(222_47%_11%/0.035)] backdrop-blur-sm sm:px-6", className)}>
       {children}
     </div>
   );

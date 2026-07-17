@@ -166,10 +166,20 @@ export function CreateTaskSheet({
           <SheetDescription>
             {isEditing ? "Update the details for this cleanup task." : "A task can be saved as a draft without a collector assigned."}
           </SheetDescription>
+          <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border/70 pt-4" aria-label="Task form sections">
+            {[
+              ["1", "Details"], ["2", "Assignment"], ["3", "Location"], ["4", "Notes"],
+            ].map(([number, label]) => (
+              <div key={number} className="form-progress-step">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">{number}</span>
+                <span className="truncate">{label}</span>
+              </div>
+            ))}
+          </div>
         </SheetHeader>
 
         <div className="space-y-7 px-5 py-5 sm:px-6">
-          <section className="space-y-3">
+          <section className="sheet-section space-y-3">
             <h3 className="section-label">Task details</h3>
             <Field label="Title" error={errors.title} required>
               <Input value={values.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Plastic dump near lake" />
@@ -210,7 +220,7 @@ export function CreateTaskSheet({
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section className="sheet-section space-y-3">
             <h3 className="section-label">Assignment &amp; timing</h3>
             <Field label="Assigned collector" hint="Leave blank to save as a draft — you can assign later.">
               <Select value={values.assignee || "__none"} onValueChange={(v) => set("assignee", v === "__none" ? "" : v)}>
@@ -238,7 +248,7 @@ export function CreateTaskSheet({
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section className="sheet-section space-y-3">
             <h3 className="section-label">Location</h3>
             <Field label="Address" error={errors.location} required>
               <Input value={values.location} onChange={(e) => set("location", e.target.value)} placeholder="e.g. MG Road, Ward 12" />
@@ -253,7 +263,7 @@ export function CreateTaskSheet({
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section className="sheet-section space-y-3">
             <h3 className="section-label">Optional details</h3>
             <Field label="Instructions">
               <Textarea value={values.instructions} onChange={(e) => set("instructions", e.target.value)} placeholder="Any special handling notes for the collector" />
@@ -270,7 +280,7 @@ export function CreateTaskSheet({
 
         <SheetFooter className="sticky bottom-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>{isEditing ? "Save changes" : "Create task"}</Button>
+          <Button className="dashboard-primary-action" onClick={handleSubmit}>{isEditing ? "Save changes" : "Create task"}</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -282,7 +292,7 @@ function Field({
 }: { label: string; error?: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm text-foreground">
+      <Label className="text-sm font-medium text-foreground">
         {label}{required && <span className="text-destructive"> *</span>}
       </Label>
       {children}

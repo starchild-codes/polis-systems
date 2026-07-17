@@ -52,10 +52,10 @@ export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNa
               aria-current={active ? "page" : undefined}
               title={collapsed ? item.title : undefined}
               className={cn(
-                "relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-[color,background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:translate-y-px motion-reduce:transform-none",
+                "relative flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-[color,background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:translate-y-px motion-reduce:transform-none",
                 active
-                  ? "bg-white/[0.14] text-white shadow-sm before:absolute before:left-0 before:h-6 before:w-1 before:rounded-r-full before:bg-white/90"
-                  : "text-sidebar-foreground/75 hover:bg-white/[0.07] hover:text-white",
+                  ? "bg-white/[0.16] text-white shadow-[0_6px_16px_rgba(15,23,42,0.12)] before:absolute before:left-0 before:h-6 before:w-1 before:rounded-r-full before:bg-white/90"
+                  : "text-sidebar-foreground/75 hover:translate-x-0.5 hover:bg-white/[0.08] hover:text-white",
                 collapsed && "justify-center px-2",
               )}
             >

@@ -93,6 +93,34 @@ body {
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
+
+  .dashboard-primary-action {
+    @apply relative overflow-hidden rounded-xl border border-white/15 bg-primary px-4 shadow-[0_6px_16px_hsl(var(--primary)/0.2)] after:absolute after:inset-y-1 after:left-1 after:w-1 after:rounded-full after:bg-white/45 after:content-[''] hover:-translate-y-px hover:bg-primary-dark hover:shadow-[0_10px_22px_hsl(var(--primary)/0.24)] active:translate-y-0 motion-reduce:transform-none;
+  }
+
+  .dashboard-filter-bar {
+    @apply surface-card relative overflow-hidden p-3.5 before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-primary/25;
+  }
+
+  .dashboard-table-shell {
+    @apply surface-card overflow-auto scrollbar-thin;
+  }
+
+  .dashboard-row {
+    @apply relative cursor-pointer before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-r-full before:bg-primary/0 before:transition-colors hover:before:bg-primary/65 focus-within:before:bg-primary/65;
+  }
+
+  .dashboard-metric {
+    @apply interactive-card relative overflow-hidden p-5 before:absolute before:right-0 before:top-0 before:h-12 before:w-12 before:rounded-bl-[2rem] before:bg-primary/[0.045] before:content-[''];
+  }
+
+  .sheet-section {
+    @apply rounded-xl border border-border/80 bg-muted/[0.18] p-4 shadow-[0_1px_2px_hsl(222_47%_11%/0.02)] sm:p-5;
+  }
+
+  .form-progress-step {
+    @apply flex min-w-0 items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
 }
 
 .landing-hero-frame {

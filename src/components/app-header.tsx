@@ -21,7 +21,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
         id="sidebar-toggle"
         type="button"
         onClick={onToggleSidebar}
-        className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-[color,background-color,border-color,transform] hover:scale-[1.03] hover:border-primary/15 hover:bg-primary/[0.055] hover:text-primary motion-reduce:transform-none"
         aria-label="Toggle sidebar"
         aria-controls={sidebarControls}
         aria-expanded={sidebarExpanded}
@@ -157,7 +157,7 @@ function NotificationsPanel() {
         aria-expanded={open}
         aria-controls="dashboard-notifications"
         onClick={() => setOpen((current) => !current)}
-        className="focus-ring flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-[color,background-color,border-color,transform] hover:scale-[1.03] hover:border-primary/15 hover:bg-primary/[0.055] hover:text-primary motion-reduce:transform-none"
       >
         <Bell className="h-4 w-4" />
       </button>
@@ -171,7 +171,7 @@ function NotificationsPanel() {
           tabIndex={-1}
           style={position}
           onKeyDown={handlePanelKeyDown}
-          className="z-[100] max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-popover text-popover-foreground shadow-floating outline-none animate-scale-in"
+          className="z-[100] max-w-[calc(100vw-1rem)] rounded-xl border border-border/90 bg-popover text-popover-foreground shadow-floating outline-none animate-pop-in motion-reduce:animate-none"
         >
           <div className="p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/10">

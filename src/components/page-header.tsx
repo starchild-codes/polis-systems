@@ -32,8 +32,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-      {icon && <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-background text-primary shadow-sm ring-1 ring-border">{icon}</div>}
+    <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-primary/20 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.075),transparent_48%)] px-6 py-14 text-center">
+      {icon && <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-background text-primary shadow-sm ring-1 ring-primary/15">{icon}</div>}
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
       {description && <p className="mt-1.5 max-w-md text-sm leading-6 text-muted-foreground">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

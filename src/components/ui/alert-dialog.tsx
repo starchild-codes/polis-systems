@@ -21,8 +21,8 @@ export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in" onClick={() => onOpenChange(false)} />
-      <div role="alertdialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-floating animate-scale-in">
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in motion-reduce:animate-none" onClick={() => onOpenChange(false)} />
+      <div role="alertdialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-2xl border border-border/90 bg-background p-6 shadow-floating animate-pop-in motion-reduce:animate-none">
         {children}
       </div>
     </div>
@@ -42,7 +42,7 @@ export function AlertDialogDescription({ children }: { children: ReactNode }) {
 }
 
 export function AlertDialogFooter({ children }: { children: ReactNode }) {
-  return <div className="mt-6 flex justify-end gap-2">{children}</div>;
+  return <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-border/70 pt-4">{children}</div>;
 }
 
 export function AlertDialogContent({ children }: { children: ReactNode }) {

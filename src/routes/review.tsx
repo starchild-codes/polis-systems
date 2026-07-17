@@ -267,7 +267,7 @@ function ReviewPage() {
         </Tabs>
 
         {/* Search + filters */}
-        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
+        <div className="dashboard-filter-bar flex flex-wrap items-center gap-2">
           <div className="relative min-w-[220px] flex-1">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -322,7 +322,7 @@ function ReviewPage() {
             action={emptyState.showClear ? <Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button> : undefined}
           />
         ) : (
-          <div className="surface-card overflow-auto scrollbar-thin">
+          <div className="dashboard-table-shell">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-muted/35">
@@ -339,7 +339,7 @@ function ReviewPage() {
                 {filtered.map((s) => (
                   <TableRow
                     key={s.id}
-                    className="cursor-pointer"
+                    className="dashboard-row"
                     onClick={() => openSubmission(s.id)}
                   >
                     <TableCell>
@@ -733,7 +733,7 @@ function MetricCard({
     destructive: "text-destructive",
   }[tone];
   return (
-    <div className="interactive-card group p-5">
+    <div className="dashboard-metric group">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
         <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneClass}`}>{icon}</span>

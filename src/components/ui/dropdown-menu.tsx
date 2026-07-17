@@ -163,7 +163,7 @@ export function DropdownMenuContent({
       style={position}
       onKeyDown={handleKeyDown}
       className={cn(
-        "z-[100] min-w-[12rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-floating animate-scale-in",
+        "z-[100] min-w-[12rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-border/90 bg-popover p-1.5 text-popover-foreground shadow-floating animate-pop-in",
         "max-h-[min(20rem,calc(100vh-1rem))]",
         className,
       )}
@@ -192,8 +192,8 @@ export function DropdownMenuItem({
       }}
       onClick={() => { onClick?.(); setOpen(false); }}
       className={cn(
-        "flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm outline-none transition-colors",
-        "hover:bg-accent focus:bg-accent focus:text-accent-foreground",
+        "flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm outline-none transition-[color,background-color,transform] duration-150",
+        "hover:translate-x-0.5 hover:bg-accent focus:bg-accent focus:text-accent-foreground motion-reduce:transform-none",
         className,
       )}
     >
