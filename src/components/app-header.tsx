@@ -11,7 +11,7 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }: AppHeaderProps) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, organizationName, organizationRole, signOut } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -55,7 +55,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
                 {profile?.full_name ?? user?.email ?? "User"}
               </div>
               <div className="text-[10px] text-muted-foreground capitalize">
-                {profile?.role ?? "—"}
+                {organizationRole ?? "—"}{organizationName ? ` · ${organizationName}` : ""}
               </div>
             </div>
             <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />

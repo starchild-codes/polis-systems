@@ -39,6 +39,12 @@ let state: TaskStoreState = {
 
 const listeners = new Set<() => void>();
 
+export function resetTaskStore() {
+  fetchPromise = null;
+  state = { tasks: [], events: [], loading: true, error: null };
+  emit();
+}
+
 function emit() {
   for (const l of listeners) l();
 }

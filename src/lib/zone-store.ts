@@ -17,6 +17,12 @@ let state: ZoneStoreState = {
 
 const listeners = new Set<() => void>();
 
+export function resetZoneStore() {
+  fetchPromise = null;
+  state = { zones: [], loading: true, error: null };
+  emit();
+}
+
 function emit() {
   for (const l of listeners) l();
 }

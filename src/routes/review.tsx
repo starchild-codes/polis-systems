@@ -54,7 +54,7 @@ function formatDateTime(ts: string | null): string {
 }
 
 function ReviewPage() {
-  const { user, profile } = useAuth();
+  const { user, organizationRole } = useAuth();
   const { tasks } = useTaskStore();
   const collectors = useCollectorStore();
   const [submissions, setSubmissions] = useState<SubmissionWithRelations[]>([]);
@@ -190,7 +190,7 @@ function ReviewPage() {
   }
 
   async function handleCreateTest(taskId: string, collectorId: string) {
-    if (!user || profile?.role !== "admin") return;
+    if (!user || organizationRole !== "admin") return;
     setActionLoading(true);
     try {
       const submissionId = await createTestSubmission({ taskId, collectorId, adminId: user.id });
@@ -209,7 +209,7 @@ function ReviewPage() {
   }
 
   async function handleDeleteTest() {
-    if (!cleanupTarget || !user || profile?.role !== "admin") return;
+    if (!cleanupTarget || !user || organizationRole !== "admin") return;
     setActionLoading(true);
     try {
       await deleteTestSubmission(cleanupTarget, user.id);
@@ -240,7 +240,7 @@ function ReviewPage() {
       <PageHeader
         title="Submission Review"
         description="Verify cleanup evidence and approve or return field submissions"
-        actions={profile?.role === "admin" ? (
+        actions={organizationRole === "admin" ? (
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTestSheetOpen(true)}>
             <FlaskConical className="h-4 w-4" /> Create test submission
           </Button>
@@ -396,7 +396,7 @@ function ReviewPage() {
         onApprove={handleApprove}
         onReject={handleReject}
         onDeleteTest={(submission) => setCleanupTarget(submission)}
-        canManageTestData={profile?.role === "admin"}
+        canManageTestData={organizationRole === "admin"}
         actionLoading={actionLoading}
       />
 

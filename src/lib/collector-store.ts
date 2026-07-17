@@ -32,6 +32,12 @@ let state: CollectorStoreState = {
 
 const listeners = new Set<() => void>();
 
+export function resetCollectorStore() {
+  fetchPromise = null;
+  state = { collectors: [], loading: true, error: null };
+  emit();
+}
+
 function emit() {
   for (const l of listeners) l();
 }

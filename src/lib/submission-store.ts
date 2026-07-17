@@ -543,6 +543,12 @@ let mockSubmissions: SubmissionWithChecklist[] = [];
 let mockFetchPromise: Promise<void> | null = null;
 const mockListeners = new Set<() => void>();
 
+export function resetSubmissionStore() {
+  mockFetchPromise = null;
+  mockSubmissions = [];
+  mockEmit();
+}
+
 function mockEmit() {
   for (const l of mockListeners) l();
 }

@@ -190,6 +190,12 @@ interface TaskRow {
 
 const collectorNameCache = new Map<string, string>();
 
+export function clearSupabaseDataCaches() {
+  zoneCache.clear();
+  nameCache.clear();
+  collectorNameCache.clear();
+}
+
 export function cacheCollectorName(id: string, name: string) {
   collectorNameCache.set(id, name);
 }

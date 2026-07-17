@@ -1,14 +1,24 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { resetOperationalState } from "@/lib/operational-state";
 
 export type UserRole = "admin" | "operator" | "pending";
+export type OrganizationRole = "admin" | "operator";
 
 export interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
   role: UserRole;
+  active_organization_id: string | null;
+}
+
+export interface OrganizationMembership {
+  organization_id: string;
+  user_id: string;
+  role: OrganizationRole;
+  is_active: boolean;
 }
 
 export interface AuthContextType {
@@ -18,6 +28,10 @@ export interface AuthContextType {
   profile: Profile | null;
   profileLoading: boolean;
   profileError: string | null;
+  organizationMembership: OrganizationMembership | null;
+  organizationName: string | null;
+  organizationId: string | null;
+  organizationRole: OrganizationRole | null;
   isAuthorized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: string | null; requiresEmailConfirmation: boolean }>;
@@ -33,8 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [organizationMembership, setOrganizationMembership] = useState<OrganizationMembership | null>(null);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
 
   const user = session?.user ?? null;
+  const userId = user?.id ?? null;
 
   useEffect(() => {
     let active = true;
@@ -67,36 +84,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    resetOperationalState();
+    if (!userId) {
       setProfile(null);
       setProfileError(null);
+      setOrganizationMembership(null);
+      setOrganizationName(null);
       setProfileLoading(false);
       return;
     }
     let active = true;
     setProfile(null);
     setProfileError(null);
+    setOrganizationMembership(null);
+    setOrganizationName(null);
     setProfileLoading(true);
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, role")
-        .eq("id", user.id)
+        .select("id, email, full_name, role, active_organization_id")
+        .eq("id", userId)
         .maybeSingle();
       if (!active) return;
       if (error) {
         setProfile(null);
         setProfileError(error.message);
+      } else if (!data) {
+        setProfile(null);
+        setProfileError("Profile not found");
       } else {
-        setProfile(data as Profile | null);
-        setProfileError(data ? null : "Profile not found");
+        const nextProfile = data as Profile;
+        setProfile(nextProfile);
+        if (nextProfile.active_organization_id) {
+          const { data: membership, error: membershipError } = await supabase
+            .from("organization_members")
+            .select("organization_id, user_id, role, is_active")
+            .eq("organization_id", nextProfile.active_organization_id)
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (!active) return;
+          if (membershipError) {
+            setProfileError(membershipError.message);
+          } else if (membership) {
+            setOrganizationMembership(membership as OrganizationMembership);
+            const { data: organization, error: organizationError } = await supabase
+              .from("organizations")
+              .select("name")
+              .eq("id", nextProfile.active_organization_id)
+              .maybeSingle();
+            if (!active) return;
+            if (organizationError) setProfileError(organizationError.message);
+            else setOrganizationName(organization?.name ?? null);
+          }
+        }
       }
-      setProfileLoading(false);
+      if (active) setProfileLoading(false);
     })();
     return () => { active = false; };
-  }, [user]);
+  }, [userId]);
 
-  const isAuthorized = profile?.role === "admin" || profile?.role === "operator";
+  const organizationId = organizationMembership?.organization_id ?? null;
+  const organizationRole = organizationMembership?.role ?? null;
+  const isAuthorized = Boolean(
+    profile
+    && profile.active_organization_id
+    && organizationMembership?.is_active
+    && organizationMembership.organization_id === profile.active_organization_id
+    && (organizationRole === "admin" || organizationRole === "operator"),
+  );
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -132,6 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setProfile(null);
     setProfileError(null);
+    setOrganizationMembership(null);
+    setOrganizationName(null);
+    resetOperationalState();
   }
 
   return (
@@ -143,6 +202,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         profileLoading,
         profileError,
+        organizationMembership,
+        organizationName,
+        organizationId,
+        organizationRole,
         isAuthorized,
         signIn,
         signUp,
