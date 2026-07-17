@@ -29,8 +29,9 @@ export function LandingNavbar() {
   }, []);
 
   const navLinks = [
-    { href: "#about", label: "About" },
-    { href: "#how-it-works", label: "How It Works" },
+    { href: "#about", label: "What we do" },
+    { href: "#how-it-works", label: "Workflow" },
+    { href: "#capabilities", label: "Capabilities" },
     { href: "#impact", label: "Impact" },
   ];
 
@@ -47,7 +48,7 @@ export function LandingNavbar() {
         <Logo />
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-6 lg:flex">
           {navLinks.map((link) => (
             <a
               key={link.href}
@@ -60,7 +61,7 @@ export function LandingNavbar() {
         </div>
 
         {/* Desktop actions */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-2 md:flex">
           {isAuthorized && (
             <Link to="/overview" className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary-dark">
               Open dashboard
@@ -85,6 +86,8 @@ export function LandingNavbar() {
           onClick={() => setMobileOpen(!mobileOpen)}
           className="focus-ring rounded-lg p-2 text-navy-700 transition-colors hover:bg-navy-50 md:hidden"
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+          aria-controls="public-mobile-navigation"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             {mobileOpen ? (
@@ -98,7 +101,7 @@ export function LandingNavbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="space-y-2 border-b border-navy-100 bg-white px-4 py-4 shadow-surface animate-fade-in md:hidden">
+        <div id="public-mobile-navigation" className="space-y-2 border-b border-navy-100 bg-white px-4 py-4 shadow-surface animate-fade-in md:hidden">
           {navLinks.map((link) => (
             <a
               key={link.href}
