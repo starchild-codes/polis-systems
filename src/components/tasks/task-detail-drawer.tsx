@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  MapPin, Phone, User, Calendar, Clock, ImageIcon, Pencil,
+  MapPin, Phone, User, Calendar, Clock, ImageIcon, Pencil, Trash2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -21,7 +21,7 @@ import {
 } from "@/lib/mock-data";
 import { useTaskEvents } from "@/lib/task-store";
 
-type DrawerAction = "edit" | "assign" | "reassign" | "cancel" | "resubmit" | "export";
+type DrawerAction = "edit" | "assign" | "reassign" | "cancel" | "delete" | "resubmit" | "export";
 
 export function TaskDetailDrawer({
   task,
@@ -149,7 +149,7 @@ export function TaskDetailDrawer({
           </div>
 
           <SheetFooter className="sticky bottom-0 -mx-6 flex-row flex-wrap gap-2 border-t border-border bg-background px-6 py-4">
-            {renderActions(task, { openAssignDialog, setCancelOpen, onAction })}
+          {renderActions(task, { openAssignDialog, setCancelOpen, onAction })}
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -231,20 +231,20 @@ function renderActions(
         <>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onAction("edit")}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
           <Button size="sm" onClick={() => openAssignDialog("assign")}>Assign</Button>
-          <Button variant="outline" size="sm" className="ml-auto text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
+          <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
         </>
       );
     case "assigned":
       return (
         <>
           <Button variant="outline" size="sm" onClick={() => openAssignDialog("reassign")}>Reassign</Button>
-          <Button variant="outline" size="sm" className="ml-auto text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
+          <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
         </>
       );
     case "accepted":
     case "in_progress":
       return (
-        <Button variant="outline" size="sm" className="ml-auto text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
+        <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
       );
     case "submitted":
       return (

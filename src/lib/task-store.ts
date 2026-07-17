@@ -5,6 +5,7 @@ import {
   updateTask,
   fetchAllTaskEvents,
   insertTaskEvent,
+  deleteTaskSafely,
   zoneIdFromName,
   collectorIdFromName,
   uiDateToIso,
@@ -203,6 +204,11 @@ export const taskStoreActions = {
   async cancelTask(taskId: string) {
     await updateTask(taskId, { status: "canceled" });
     await insertTaskEvent(taskId, "canceled", "Task canceled by operator");
+    await this.refresh();
+  },
+
+  async deleteTask(taskId: string) {
+    await deleteTaskSafely(taskId);
     await this.refresh();
   },
 

@@ -74,6 +74,7 @@ function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
 
   const collectors = useCollectorStore();
@@ -145,12 +146,17 @@ function TasksPage() {
     }
   }
 
-  async function handleDrawerAction(action: "edit" | "assign" | "reassign" | "cancel" | "resubmit" | "export", collector?: string) {
+  async function handleDrawerAction(action: "edit" | "assign" | "reassign" | "cancel" | "delete" | "resubmit" | "export", collector?: string) {
     if (!selectedTask) return;
     if (action === "edit") {
       setEditingTask(selectedTask);
       setDrawerOpen(false);
       setCreateOpen(true);
+      return;
+    }
+    if (action === "delete") {
+      setDeleteTarget(selectedTask);
+      setDrawerOpen(false);
       return;
     }
     try {
@@ -188,6 +194,19 @@ function TasksPage() {
       toast.error("Failed to cancel task", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setCancelTargetId(null);
+    }
+  }
+
+  async function confirmDeleteTask() {
+    if (!deleteTarget) return;
+    try {
+      await taskStoreActions.deleteTask(deleteTarget.id);
+      toast.success("Task permanently deleted", { description: `${deleteTarget.title} and its task events were removed.` });
+      setSelectedTask(null);
+    } catch (err) {
+      toast.error("Could not delete task", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -392,6 +411,13 @@ function TasksPage() {
                                 </DropdownMenuItem>
                               </>
                             )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteTarget(t)}
+                            >
+                              Delete permanently
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -435,6 +461,26 @@ function TasksPage() {
               onClick={confirmQuickCancel}
             >
               Cancel task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete this task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone. Tasks with proof-of-work submissions are protected and cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep task</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDeleteTask}
+            >
+              Delete task
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

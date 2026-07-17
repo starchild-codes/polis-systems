@@ -99,6 +99,7 @@ function CollectorsPage() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const [confirm, setConfirm] = useState<{ id: string; name: string; action: "deactivate" | "suspend" } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Collector | null>(null);
   const [saving, setSaving] = useState(false);
 
   const counts = useMemo(() => computeCollectorCounts(collectors), [collectors]);
@@ -175,6 +176,20 @@ function CollectorsPage() {
       toast.error("Failed to update status", { description: err instanceof Error ? err.message : undefined });
     } finally {
       setConfirm(null);
+    }
+  }
+
+  async function confirmDeleteCollector() {
+    if (!deleteTarget) return;
+    try {
+      await collectorStoreActions.deleteCollector(deleteTarget.id);
+      toast.success("Collector permanently deleted", { description: `${deleteTarget.name} was removed.` });
+      setSelected(null);
+      setDetailOpen(false);
+    } catch (err) {
+      toast.error("Could not delete collector", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setDeleteTarget(null);
     }
   }
 
@@ -332,7 +347,7 @@ function CollectorsPage() {
                         {c.lastActiveAt === "—" ? "—" : formatFriendlyDateTime(c.lastActiveAt)}
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <RowActions collector={c} onEdit={() => { setEditing(c); setFormOpen(true); }} onStatus={(next) => handleStatusChange(c.id, next, c.name)} />
+                        <RowActions collector={c} onEdit={() => { setEditing(c); setFormOpen(true); }} onStatus={(next) => handleStatusChange(c.id, next, c.name)} onDelete={() => setDeleteTarget(c)} />
                       </TableCell>
                     </TableRow>
                   );
@@ -359,6 +374,7 @@ function CollectorsPage() {
         onOpenChange={setDetailOpen}
         onEdit={() => { if (liveSelected) { setEditing(liveSelected); setDetailOpen(false); setFormOpen(true); } }}
         onStatus={(next) => { if (liveSelected) handleStatusChange(liveSelected.id, next, liveSelected.name); }}
+        onDelete={() => { if (liveSelected) setDeleteTarget(liveSelected); }}
       />
 
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
@@ -382,13 +398,30 @@ function CollectorsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete this collector?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone. Collectors with active assigned tasks must have those tasks reassigned or removed first. Proof-of-work history is retained and also prevents deletion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep collector</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={confirmDeleteCollector}>
+              Delete collector
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 function RowActions({
-  collector, onEdit, onStatus,
-}: { collector: Collector; onEdit: () => void; onStatus: (next: CollectorStatus) => void }) {
+  collector, onEdit, onStatus, onDelete,
+}: { collector: Collector; onEdit: () => void; onStatus: (next: CollectorStatus) => void; onDelete: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -411,6 +444,8 @@ function RowActions({
             Suspend
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>Delete permanently</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -617,13 +652,14 @@ function Field({
 // ─────────────────────────── Detail drawer ───────────────────────────
 
 function CollectorDetailDrawer({
-  collector, open, onOpenChange, onEdit, onStatus,
+  collector, open, onOpenChange, onEdit, onStatus, onDelete,
 }: {
   collector: Collector | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
   onStatus: (next: CollectorStatus) => void;
+  onDelete: () => void;
 }) {
   const { tasks } = useTaskStore();
   const submissions = useSubmissionStore();
@@ -745,6 +781,7 @@ function CollectorDetailDrawer({
               Suspend
             </Button>
           )}
+          <Button variant="ghost" className="ml-auto text-destructive hover:text-destructive" onClick={onDelete}>Delete collector</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>

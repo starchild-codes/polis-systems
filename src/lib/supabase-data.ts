@@ -270,6 +270,22 @@ export async function updateTask(
   if (error) throw error;
 }
 
+/**
+ * Deletes a task only when it has no proof-of-work submission. The database
+ * function performs the check and deletion together, while task events and
+ * WhatsApp sessions are cleaned up by their foreign-key cascades.
+ */
+export async function deleteTaskSafely(id: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_task_safely", { p_task_id: id });
+  if (error) throw new Error(error.message);
+}
+
+/** Permanently deletes an eligible collector through the guarded database RPC. */
+export async function deleteCollectorSafely(id: string): Promise<void> {
+  const { error } = await supabase.rpc("delete_collector_safely", { p_collector_id: id });
+  if (error) throw new Error(error.message);
+}
+
 // ─── Task events ────────────────────────────────────────────────────────────
 
 interface TaskEventRow {

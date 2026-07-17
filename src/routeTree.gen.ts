@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -26,6 +27,11 @@ import { Route as DashboardCollectorsRouteImport } from './routes/dashboard/coll
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
   '/dashboard/collectors': typeof DashboardCollectorsRoute
   '/dashboard/submissions': typeof DashboardSubmissionsRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/settings'
+    | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
     | '/dashboard/submissions'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/settings'
+    | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
     | '/dashboard/submissions'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/settings'
+    | '/signup'
     | '/tasks'
     | '/dashboard/collectors'
     | '/dashboard/submissions'
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
   TasksRoute: typeof TasksRoute
 }
 
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -316,6 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
   TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport

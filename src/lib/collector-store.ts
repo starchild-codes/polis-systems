@@ -3,6 +3,7 @@ import {
   fetchCollectors,
   insertCollector,
   updateCollector,
+  deleteCollectorSafely,
   zoneIdFromName,
   COLLECTOR_STATUS_DB_MAP,
   cacheCollectorName,
@@ -132,6 +133,11 @@ export const collectorStoreActions = {
     await updateCollector(id, {
       status: COLLECTOR_STATUS_DB_MAP[status],
     });
+    await this.refresh();
+  },
+
+  async deleteCollector(id: string) {
+    await deleteCollectorSafely(id);
     await this.refresh();
   },
 };

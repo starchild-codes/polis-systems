@@ -240,6 +240,14 @@ export async function approveSubmission(
   submissionId: string,
   reviewerId: string,
 ): Promise<void> {
+  const { error } = await supabase.rpc("review_submission_safely", {
+    p_submission_id: submissionId,
+    p_reviewer_id: reviewerId,
+    p_decision: "approved",
+    p_rejection_reason: null,
+  });
+  if (error) throw new Error(`Failed to approve submission: ${error.message}`);
+  if (error === null) return;
   // 1. Fetch the submission to get the task_id
   const { data: sub, error: fetchErr } = await supabase
     .from("submissions")
@@ -319,6 +327,15 @@ export async function rejectSubmission(
   if (!rejectionReason.trim()) {
     throw new Error("A rejection reason is required.");
   }
+
+  const { error } = await supabase.rpc("review_submission_safely", {
+    p_submission_id: submissionId,
+    p_reviewer_id: reviewerId,
+    p_decision: "rejected",
+    p_rejection_reason: rejectionReason.trim(),
+  });
+  if (error) throw new Error(`Failed to reject submission: ${error.message}`);
+  if (error === null) return;
 
   // 1. Fetch the submission to get the task_id
   const { data: sub, error: fetchErr } = await supabase
