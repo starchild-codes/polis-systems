@@ -9,7 +9,6 @@ import {
   KeyRound,
   MapPin,
   MessageCircle,
-  Radio,
   Send,
   ShieldCheck,
   Users,
@@ -41,38 +40,14 @@ function LandingPage() {
     <div className="min-h-screen overflow-x-hidden bg-white text-navy-950">
       <LandingNavbar />
       <main>
-        <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,hsl(var(--navy-50))_0%,white_48%,hsl(var(--primary)/0.08)_100%)] pb-20 pt-28 sm:pb-24 sm:pt-36 lg:pb-28 lg:pt-40">
-          <div aria-hidden="true" className="absolute -right-32 -top-36 -z-10 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" />
-          <div aria-hidden="true" className="absolute -bottom-56 left-[28%] -z-10 h-[28rem] w-[28rem] rounded-full bg-sky-100/60 blur-3xl" />
-          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 md:grid-cols-[0.92fr_1.08fr] md:px-6 lg:gap-16 lg:px-8">
-            <div className="motion-safe:animate-fade-up">
-              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary shadow-sm">
-                <Radio className="h-3.5 w-3.5" /> Field operations for cleaner cities
-              </p>
-              <h1 className="max-w-2xl text-4xl font-semibold leading-[1.06] tracking-[-0.04em] text-navy-950 sm:text-5xl lg:text-6xl">
-                Cleaner Cities. <span className="text-primary">Better Work.</span>
-              </h1>
-              <p className="mt-6 max-w-xl text-lg leading-8 text-navy-600">
-                Coordinate cleaner neighborhoods, one verified task at a time. Polis Systems connects field collectors and operators through one clear workflow for assigning, documenting, and verifying cleanup work.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link to="/signup" className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-[background-color,transform,box-shadow] hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-xl motion-reduce:transform-none">
-                  Request access <ArrowRight className="h-4 w-4" />
-                </Link>
-                <a href="#how-it-works" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-xl border border-navy-100 bg-white px-5 py-3 text-sm font-semibold text-navy-700 shadow-sm transition-colors hover:border-primary/20 hover:bg-navy-50">
-                  Explore the workflow
-                </a>
+        <section className="landing-hero-frame">
+          <div className="landing-hero relative isolate flex overflow-hidden">
+            <div aria-hidden="true" className="landing-hero__glow landing-hero__glow--top" />
+            <div aria-hidden="true" className="landing-hero__glow landing-hero__glow--bottom" />
+            <div className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-3 py-4 sm:px-5 md:px-6 lg:px-8">
+              <div className="w-full min-w-0">
+                <LandingBrandReveal />
               </div>
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-navy-600">
-                <Signal>Structured assignments</Signal>
-                <Signal>Verified field proof</Signal>
-                <Signal>Clear audit trail</Signal>
-              </div>
-            </div>
-
-            <div className="relative motion-safe:animate-fade-up [animation-delay:100ms]">
-              <div aria-hidden="true" className="absolute -inset-4 -z-10 rounded-[2rem] bg-primary/10 blur-2xl" />
-              <LandingBrandReveal />
             </div>
           </div>
         </section>
@@ -81,7 +56,7 @@ function LandingPage() {
           <SectionIntro
             eyebrow="What Polis Systems does"
             title="A practical operating layer for cleaner neighborhoods."
-            description="Bring field assignments, collector participation, proof review, and reporting into one accountable workflow."
+            description="Coordinate cleaner neighborhoods, one verified task at a time. Polis Systems connects field collectors and operators through one clear workflow for assigning, documenting, verifying, and reporting cleanup work."
           />
           <div className="landing-section-reveal mt-10 grid gap-5 md:grid-cols-3">
             <Feature icon={<ClipboardCheck className="h-5 w-5" />} title="Clear assignments" text="Give every cleanup task a location, priority, deadline, and accountable collector." />
@@ -177,10 +152,6 @@ function LandingPage() {
       </footer>
     </div>
   );
-}
-
-function Signal({ children }: { children: ReactNode }) {
-  return <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" />{children}</span>;
 }
 
 function SectionIntro({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {

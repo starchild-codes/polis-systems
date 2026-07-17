@@ -95,38 +95,74 @@ body {
   }
 }
 
+.landing-hero-frame {
+  display: flex;
+  min-height: calc(100svh - 4.5rem);
+  background: white;
+  padding: clamp(0.75rem, 2.1vw, 2rem);
+}
+
+.landing-hero {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid hsl(var(--primary-dark) / 0.16);
+  border-radius: clamp(1.5rem, 3vw, 2.25rem);
+  background:
+    radial-gradient(circle at 50% 48%, hsl(199 92% 58% / 0.23), transparent 34%),
+    linear-gradient(145deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 58%, hsl(202 83% 46%) 100%);
+  box-shadow: 0 22px 54px hsl(207 55% 18% / 0.14);
+}
+
+.landing-hero__glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(72px);
+}
+
+.landing-hero__glow--top {
+  right: -12rem;
+  top: -15rem;
+  height: 34rem;
+  width: 34rem;
+  background: hsl(190 90% 70% / 0.2);
+}
+
+.landing-hero__glow--bottom {
+  bottom: -17rem;
+  left: -10rem;
+  height: 38rem;
+  width: 38rem;
+  background: hsl(222 82% 32% / 0.25);
+}
+
 .brand-reveal {
   position: relative;
   isolation: isolate;
-  min-height: 27rem;
+  min-height: clamp(28rem, 72vh, 48rem);
   overflow: hidden;
-  border: 1px solid hsl(var(--primary) / 0.16);
-  border-radius: 1.5rem;
-  background:
-    radial-gradient(circle at 72% 20%, hsl(var(--primary) / 0.16), transparent 34%),
-    radial-gradient(circle at 18% 84%, hsl(199 89% 88% / 0.7), transparent 32%),
-    linear-gradient(145deg, hsl(210 40% 99%), hsl(206 70% 96%));
-  box-shadow: 0 28px 70px hsl(207 55% 18% / 0.14);
 }
 
 .brand-reveal::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 12% 8%;
   z-index: -1;
-  background: linear-gradient(110deg, transparent 35%, hsl(0 0% 100% / 0.5) 50%, transparent 65%);
-  opacity: 0.45;
+  border-radius: 999px;
+  background: radial-gradient(circle, hsl(0 0% 100% / 0.12), transparent 67%);
+  filter: blur(28px);
 }
 
 .brand-reveal__grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(hsl(var(--primary) / 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--primary) / 0.055) 1px, transparent 1px);
-  background-size: 32px 32px;
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent 88%);
-  mask-image: linear-gradient(to bottom, black, transparent 88%);
+    linear-gradient(hsl(0 0% 100% / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(0 0% 100% / 0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+  mask-image: radial-gradient(ellipse at center, black, transparent 72%);
 }
 
 @keyframes landing-section-reveal {
@@ -147,32 +183,60 @@ body {
   inset: 0;
   height: 100%;
   width: 100%;
-  color: hsl(var(--primary));
+  color: hsl(0 0% 100%);
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 1.7;
+  vector-effect: non-scaling-stroke;
 }
 
 .brand-reveal__piece {
-  --brand-x: 0px;
-  --brand-y: 0px;
+  --entry-x: 0px;
+  --entry-y: 12px;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: brand-piece-settle 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: brand-piece-snap 0.72s cubic-bezier(0.2, 0.82, 0.28, 1.12) forwards;
 }
 
-.brand-reveal__piece--route { --brand-x: 110px; --brand-y: 86px; animation-delay: 0.05s; }
-.brand-reveal__piece--task-left { --brand-x: 130px; --brand-y: -32px; animation-delay: 0.22s; }
-.brand-reveal__piece--task-right { --brand-x: -118px; --brand-y: 76px; animation-delay: 0.38s; }
-.brand-reveal__piece--pin { --brand-x: -128px; --brand-y: -48px; animation-delay: 0.12s; }
-.brand-reveal__piece--check { --brand-x: 93px; --brand-y: 35px; animation-delay: 0.48s; }
-.brand-reveal__piece--message { --brand-x: -75px; --brand-y: -52px; animation-delay: 0.3s; }
-.brand-reveal__piece--dots { --brand-x: 0px; --brand-y: 28px; animation-delay: 0.16s; }
+.brand-reveal__piece--route { --entry-x: -22px; --entry-y: 12px; animation-delay: 0.06s; }
+.brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -18px; animation-delay: 0.1s; }
+.brand-reveal__piece--task-left { --entry-x: -18px; --entry-y: 10px; animation-delay: 0.14s; }
+.brand-reveal__piece--audit { --entry-x: -16px; --entry-y: 0px; animation-delay: 0.2s; }
+.brand-reveal__piece--check { --entry-x: -10px; --entry-y: 12px; animation-delay: 0.24s; }
+.brand-reveal__piece--task-right { --entry-x: 18px; --entry-y: -8px; animation-delay: 0.28s; }
+.brand-reveal__piece--workflow { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.32s; }
+.brand-reveal__piece--pin { --entry-x: 14px; --entry-y: 12px; animation-delay: 0.36s; }
+.brand-reveal__piece--assignment { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.4s; }
+.brand-reveal__piece--message { --entry-x: 16px; --entry-y: 8px; animation-delay: 0.44s; }
+.brand-reveal__piece--report { --entry-x: 16px; --entry-y: 14px; animation-delay: 0.48s; }
+.brand-reveal__piece--status { --entry-x: 16px; --entry-y: 0px; animation-delay: 0.5s; }
+.brand-reveal__piece--movement { --entry-x: -12px; --entry-y: 12px; animation-delay: 0.52s; }
+.brand-reveal__piece--dots { --entry-x: 0px; --entry-y: 10px; animation-delay: 0.56s; }
 
 .brand-reveal__draw {
-  stroke-dasharray: 220;
-  stroke-dashoffset: 220;
-  animation: brand-line-draw 1.15s ease-out 0.35s forwards;
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  animation: brand-line-draw 1.35s ease-out 0.95s forwards;
+}
+
+.brand-reveal__connector {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: brand-line-draw 1.15s ease-out 1.05s forwards;
+}
+
+.brand-reveal__trace {
+  stroke-dasharray: 5 9;
+  stroke-dashoffset: 100;
+  animation: brand-line-draw 1.4s linear 1s forwards;
+}
+
+.brand-reveal__pulse {
+  fill: currentColor;
+  opacity: 0.35;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-pulse-once 0.65s ease-out 0.72s both;
 }
 
 .brand-reveal__identity {
@@ -180,113 +244,74 @@ body {
   left: 50%;
   top: 50%;
   display: flex;
-  width: min(92%, 31rem);
-  transform: translate(-50%, -47%);
+  width: min(96%, 72rem);
+  transform: translate(-50%, -48%);
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
 
-.brand-reveal__mark {
-  display: grid;
-  height: 3.25rem;
-  width: 3.25rem;
-  place-items: center;
-  border-radius: 1rem;
-  background: hsl(var(--primary));
-  color: white;
-  font-size: 1.15rem;
-  font-weight: 700;
-  box-shadow: 0 12px 30px hsl(var(--primary) / 0.24);
-  opacity: 0;
-  transform: translateY(8px) scale(0.94);
-  animation: brand-identity-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) 2.05s forwards;
-}
-
 .brand-reveal__wordmark {
+  --brand-tracking: 0.055em;
+  --brand-tracking-start: 0.075em;
   display: flex;
   justify-content: center;
-  margin-top: 1rem;
-  color: hsl(var(--navy-950));
-  font-size: clamp(1.65rem, 5vw, 2.55rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.1;
+  margin: 0;
+  color: white;
+  font-size: clamp(3rem, 8.7vw, 7rem);
+  font-weight: 800;
+  letter-spacing: var(--brand-tracking);
+  line-height: 0.98;
+  text-shadow: 0 18px 48px hsl(207 65% 20% / 0.28);
   white-space: nowrap;
+}
+
+.brand-reveal--playing .brand-reveal__wordmark {
+  animation: brand-tracking-lock 0.55s cubic-bezier(0.22, 1, 0.36, 1) 2.65s both;
 }
 
 .brand-reveal__letter {
   display: inline-block;
   opacity: 0;
-  transform: translateY(10px);
-  animation: brand-letter-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform: translateY(14px) scale(0.94);
+  animation: brand-letter-snap 0.45s cubic-bezier(0.2, 0.84, 0.3, 1.16) forwards;
 }
 
 .brand-reveal__tagline {
-  margin-top: 0.85rem;
-  color: hsl(var(--navy-600));
-  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  margin-top: 1.25rem;
+  color: hsl(0 0% 100% / 0.88);
+  font-size: clamp(1.05rem, 2.6vw, 1.8rem);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.015em;
   opacity: 0;
   transform: translateY(8px);
-  animation: brand-identity-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) 3.05s forwards;
-}
-
-.brand-reveal__status {
-  position: absolute;
-  bottom: 1.1rem;
-  left: 50%;
-  display: inline-flex;
-  transform: translateX(-50%);
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid hsl(var(--primary) / 0.13);
-  border-radius: 999px;
-  background: hsl(0 0% 100% / 0.78);
-  padding: 0.4rem 0.75rem;
-  color: hsl(var(--navy-600));
-  font-size: 0.7rem;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px hsl(207 55% 18% / 0.06);
-  opacity: 0;
-  animation: brand-status-in 0.6s ease-out 3.45s forwards;
-}
-
-.brand-reveal__status span {
-  height: 0.4rem;
-  width: 0.4rem;
-  border-radius: 999px;
-  background: hsl(var(--success));
+  animation: brand-identity-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 3.3s forwards;
 }
 
 .brand-reveal--complete .brand-reveal__piece {
   animation: none;
-  opacity: 0.09;
-  transform: translate(var(--brand-x), var(--brand-y)) scale(0.84);
+  opacity: 0.2;
+  transform: none;
 }
 
 .brand-reveal--complete .brand-reveal__draw,
-.brand-reveal--complete .brand-reveal__mark,
+.brand-reveal--complete .brand-reveal__connector,
+.brand-reveal--complete .brand-reveal__trace,
+.brand-reveal--complete .brand-reveal__pulse,
+.brand-reveal--complete .brand-reveal__wordmark,
 .brand-reveal--complete .brand-reveal__letter,
-.brand-reveal--complete .brand-reveal__tagline,
-.brand-reveal--complete .brand-reveal__status {
+.brand-reveal--complete .brand-reveal__tagline {
   animation: none;
   opacity: 1;
   stroke-dashoffset: 0;
   transform: none;
 }
 
-.brand-reveal--complete .brand-reveal__status {
-  transform: translateX(-50%);
-}
-
-@keyframes brand-piece-settle {
-  0% { opacity: 0; transform: translate(0, 0) scale(0.94); }
-  22% { opacity: 0.8; transform: translate(0, 0) scale(1); }
-  72% { opacity: 0.56; }
-  100% { opacity: 0.09; transform: translate(var(--brand-x), var(--brand-y)) scale(0.84); }
+@keyframes brand-piece-snap {
+  0% { opacity: 0; transform: translate(var(--entry-x), var(--entry-y)) scale(0.88); }
+  72% { opacity: 0.42; transform: translate(-1px, -1px) scale(1.025); }
+  100% { opacity: 0.2; transform: none; }
 }
 
 @keyframes brand-line-draw {
@@ -297,18 +322,26 @@ body {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes brand-letter-in {
-  to { opacity: 1; transform: translateY(0); }
+@keyframes brand-letter-snap {
+  0% { opacity: 0; transform: translateY(14px) scale(0.94); }
+  68% { opacity: 1; transform: translateY(-2px) scale(1.025); }
+  100% { opacity: 1; transform: none; }
 }
 
-@keyframes brand-status-in {
-  to { opacity: 1; }
+@keyframes brand-tracking-lock {
+  from { letter-spacing: var(--brand-tracking-start); }
+  to { letter-spacing: var(--brand-tracking); }
+}
+
+@keyframes brand-pulse-once {
+  0% { opacity: 0.25; transform: scale(0.72); }
+  48% { opacity: 1; transform: scale(1.35); }
+  100% { opacity: 0.55; transform: scale(1); }
 }
 
 @media (max-width: 767px) {
   .brand-reveal {
-    min-height: 20.5rem;
-    border-radius: 1.25rem;
+    min-height: clamp(22rem, 64vh, 34rem);
   }
 
   .brand-reveal__piece--route,
@@ -318,12 +351,14 @@ body {
   }
 
   .brand-reveal__wordmark {
-    font-size: clamp(1.35rem, 7.2vw, 1.9rem);
-    letter-spacing: 0.055em;
+    --brand-tracking: 0.035em;
+    --brand-tracking-start: 0.055em;
+    font-size: clamp(1.75rem, 8.8vw, 3rem);
   }
 
-  .brand-reveal__status {
-    bottom: 0.8rem;
+  .brand-reveal__tagline {
+    margin-top: 0.85rem;
+    font-size: clamp(1rem, 4.7vw, 1.35rem);
   }
 }
 
@@ -342,24 +377,29 @@ body {
   }
 
   .brand-reveal__piece {
-    opacity: 0.09 !important;
-    transform: translate(var(--brand-x), var(--brand-y)) scale(0.84) !important;
+    animation: none !important;
+    opacity: 0.2 !important;
+    transform: none !important;
   }
 
-  .brand-reveal__draw {
+  .brand-reveal__draw,
+  .brand-reveal__connector,
+  .brand-reveal__trace {
+    animation: none !important;
     stroke-dashoffset: 0 !important;
   }
 
-  .brand-reveal__mark,
+  .brand-reveal__pulse,
+  .brand-reveal__wordmark,
   .brand-reveal__letter,
-  .brand-reveal__tagline,
-  .brand-reveal__status {
+  .brand-reveal__tagline {
+    animation: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
 
-  .brand-reveal__status {
-    transform: translateX(-50%) !important;
+  .brand-reveal__wordmark {
+    letter-spacing: var(--brand-tracking) !important;
   }
 
   .landing-section-reveal {

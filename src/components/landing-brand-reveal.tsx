@@ -12,8 +12,6 @@ export function LandingBrandReveal() {
   return (
     <div
       className={`brand-reveal ${shouldAnimate.current ? "brand-reveal--playing" : "brand-reveal--complete"}`}
-      role="img"
-      aria-label="Polis Systems. Cleaner Cities. Better Work."
     >
       <div aria-hidden="true" className="brand-reveal__grid" />
       <svg aria-hidden="true" className="brand-reveal__art" viewBox="0 0 600 420" fill="none">
@@ -49,6 +47,53 @@ export function LandingBrandReveal() {
           <path d="M389 250H427M389 268H416" />
         </g>
 
+        <g className="brand-reveal__piece brand-reveal__piece--proof">
+          <rect x="273" y="42" width="78" height="56" rx="8" />
+          <circle cx="333" cy="59" r="5" />
+          <path d="M283 86L300 68L313 79L322 70L341 89" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--report">
+          <rect x="510" y="326" width="58" height="46" rx="8" />
+          <path d="M524 359V347M539 359V339M554 359V345" />
+          <path d="M522 366H557" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--audit">
+          <path className="brand-reveal__connector" d="M33 184V238" />
+          <circle cx="33" cy="184" r="7" />
+          <circle cx="33" cy="211" r="7" />
+          <circle cx="33" cy="238" r="7" />
+          <path d="M48 184H71M48 211H63M48 238H76" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--assignment">
+          <circle cx="221" cy="357" r="12" />
+          <path d="M216 357L220 361L227 353" />
+          <path className="brand-reveal__connector" d="M236 357H258" />
+          <rect x="261" y="344" width="48" height="27" rx="6" />
+          <path d="M271 354H298M271 362H288" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--workflow">
+          <rect x="370" y="47" width="29" height="23" rx="5" />
+          <rect x="432" y="47" width="29" height="23" rx="5" />
+          <path className="brand-reveal__connector" d="M402 58H429" />
+          <path d="M423 53L429 58L423 63" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--movement">
+          <path className="brand-reveal__trace" d="M114 350C141 325 164 333 184 316C201 302 214 309 231 293" />
+          <circle className="brand-reveal__pulse" cx="114" cy="350" r="5" />
+          <circle cx="231" cy="293" r="5" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--status">
+          <circle cx="559" cy="204" r="15" />
+          <circle className="brand-reveal__pulse" cx="559" cy="204" r="5" />
+          <path d="M559 180V172M559 236V228M535 204H527M591 204H583" />
+        </g>
+
         <g className="brand-reveal__piece brand-reveal__piece--dots">
           <circle cx="315" cy="64" r="5" />
           <circle cx="344" cy="82" r="4" />
@@ -58,24 +103,20 @@ export function LandingBrandReveal() {
         </g>
       </svg>
 
-      <div aria-hidden="true" className="brand-reveal__identity">
-        <div className="brand-reveal__mark">P</div>
-        <div className="brand-reveal__wordmark" aria-hidden="true">
+      <div className="brand-reveal__identity">
+        <h1 className="brand-reveal__wordmark" aria-label="Polis Systems">
           {"POLIS SYSTEMS".split("").map((character, index) => (
             <span
+              aria-hidden="true"
               key={`${character}-${index}`}
               className="brand-reveal__letter"
-              style={{ animationDelay: `${2.15 + index * 0.045}s` }}
+              style={{ animationDelay: `${2.05 + index * 0.06}s` }}
             >
               {character === " " ? "\u00A0" : character}
             </span>
           ))}
-        </div>
+        </h1>
         <p className="brand-reveal__tagline">Cleaner Cities. Better Work.</p>
-      </div>
-
-      <div aria-hidden="true" className="brand-reveal__status">
-        <span /> Operations connected
       </div>
     </div>
   );

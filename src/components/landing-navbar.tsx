@@ -5,11 +5,11 @@ import { useAuth } from "@/lib/auth";
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5">
+    <Link to="/" className="focus-ring flex items-center gap-2.5 rounded-xl">
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm shadow-primary/20">
         P
       </div>
-      <span className="font-semibold text-navy-950 text-lg tracking-tight">
+      <span className="text-lg font-semibold tracking-tight text-navy-950">
         Polis <span className="text-primary">Systems</span>
       </span>
     </Link>
@@ -38,10 +38,10 @@ export function LandingNavbar() {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300 motion-reduce:transition-none",
+        "sticky inset-x-0 top-0 z-50 bg-white transition-shadow duration-300 motion-reduce:transition-none",
         scrolled
           ? "border-b border-navy-100 bg-white/95 shadow-sm backdrop-blur-md"
-          : "bg-transparent",
+          : "border-b border-transparent",
       )}
     >
       <nav className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
@@ -53,7 +53,7 @@ export function LandingNavbar() {
             <a
               key={link.href}
               href={link.href}
-              className="focus-ring rounded-md text-sm font-medium text-navy-600 transition-colors hover:text-navy-950"
+              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
             >
               {link.label}
             </a>
@@ -63,19 +63,19 @@ export function LandingNavbar() {
         {/* Desktop actions */}
         <div className="hidden items-center gap-2 md:flex">
           {isAuthorized && (
-            <Link to="/overview" className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary-dark">
+            <Link to="/overview" className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white">
               Open dashboard
             </Link>
           )}
           <Link
             to="/login"
-            className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-navy-50 hover:text-navy-950"
+            className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
           >
             Log In
           </Link>
           <Link
             to="/signup"
-            className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark"
+            className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark focus-visible:bg-primary-dark"
           >
             Sign Up
           </Link>
@@ -84,7 +84,7 @@ export function LandingNavbar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="focus-ring rounded-lg p-2 text-navy-700 transition-colors hover:bg-navy-50 md:hidden"
+          className="focus-ring rounded-lg p-2 text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white md:hidden"
           aria-label="Toggle menu"
           aria-expanded={mobileOpen}
           aria-controls="public-mobile-navigation"
@@ -107,28 +107,28 @@ export function LandingNavbar() {
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-3 py-2.5 text-sm font-medium text-navy-600 transition-colors hover:bg-navy-50 hover:text-navy-950"
+              className="focus-ring block rounded-lg px-3 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
             >
               {link.label}
             </a>
           ))}
           <div className="flex flex-col gap-2 border-t border-navy-100 pt-3">
             {isAuthorized && (
-              <Link to="/overview" className="text-sm font-medium text-primary py-2" onClick={() => setMobileOpen(false)}>
+              <Link to="/overview" className="focus-ring rounded-lg px-3 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white" onClick={() => setMobileOpen(false)}>
                 Open dashboard
               </Link>
             )}
             <Link
               to="/login"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-navy-700 py-2"
+              className="focus-ring rounded-lg px-3 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
             >
               Log In
             </Link>
             <Link
               to="/signup"
               onClick={() => setMobileOpen(false)}
-              className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm"
+              className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark focus-visible:bg-primary-dark"
             >
               Sign Up
             </Link>
