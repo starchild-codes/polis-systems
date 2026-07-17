@@ -36,21 +36,6 @@ export async function fetchZones(): Promise<ZoneRow[]> {
   return data ?? [];
 }
 
-/** Creates an active zone in the signed-in user's active organization. */
-export async function insertZone(name: string): Promise<ZoneRow> {
-  const { data, error } = await supabase
-    .from("zones")
-    .insert({ name: name.trim() })
-    .select("id, name")
-    .single();
-  if (error) throw error;
-
-  const zone = data as ZoneRow;
-  zoneCache.set(zone.id, zone.name);
-  nameCache.set(zone.name.toLowerCase(), zone.id);
-  return zone;
-}
-
 export function zoneNameFromId(id: string | null | undefined): string {
   if (!id) return "—";
   return zoneCache.get(id) ?? "—";
