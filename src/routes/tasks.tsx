@@ -26,7 +26,7 @@ import { useCollectorStore } from "@/lib/collector-store";
 import { useZones } from "@/lib/zone-store";
 import { CreateTaskSheet } from "@/components/tasks/create-task-sheet";
 import { TaskDetailDrawer } from "@/components/tasks/task-detail-drawer";
-import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle } from "lucide-react";
+import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -393,21 +393,21 @@ function TasksPage() {
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Open actions for ${t.title}`}><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openDrawer(t)}>View details</DropdownMenuItem>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuItem onClick={() => openDrawer(t)}><Eye className="h-4 w-4 text-muted-foreground" /> View details</DropdownMenuItem>
                             {t.status === "open" && (
-                              <DropdownMenuItem onClick={() => { setEditingTask(t); setCreateOpen(true); }}>Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setEditingTask(t); setCreateOpen(true); }}><Pencil className="h-4 w-4 text-muted-foreground" /> Edit task</DropdownMenuItem>
                             )}
                             {(t.status === "open" || t.status === "assigned" || t.status === "declined") && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
+                                  className="text-warning hover:bg-warning/10 focus:bg-warning/10 focus:text-warning"
                                   onClick={() => setCancelTargetId(t.id)}
                                 >
-                                  Cancel task
+                                  <Ban className="h-4 w-4" /> Cancel task
                                 </DropdownMenuItem>
                               </>
                             )}
@@ -416,7 +416,7 @@ function TasksPage() {
                               className="text-destructive focus:text-destructive"
                               onClick={() => setDeleteTarget(t)}
                             >
-                              Delete permanently
+                              <Trash2 className="h-4 w-4" /> Delete permanently
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

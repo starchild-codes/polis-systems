@@ -63,6 +63,16 @@ export interface SubmissionWithRelations extends Submission {
   collector: CollectorInfo | null;
 }
 
+export const TEST_SUBMISSION_MARKER = "[POLIS ADMIN TEST SUBMISSION]";
+
+export function isTestSubmission(submission: Pick<Submission, "collectorNotes">): boolean {
+  return submission.collectorNotes?.startsWith(TEST_SUBMISSION_MARKER) ?? false;
+}
+
+function previousTaskStatusFromTestSubmission(submission: Pick<Submission, "collectorNotes">): string | null {
+  return submission.collectorNotes?.match(/previous_task_status=([a-z_]+)/)?.[1] ?? null;
+}
+
 // ─── Fetch ──────────────────────────────────────────────────────────────────
 
 interface SubmissionRow {
@@ -222,6 +232,111 @@ export async function fetchSubmissions(): Promise<SubmissionWithRelations[]> {
   }));
 }
 
+export async function createTestSubmission({
+  taskId, collectorId, adminId,
+}: { taskId: string; collectorId: string; adminId: string }): Promise<string> {
+  const { data: task, error: taskError } = await supabase
+    .from("tasks")
+    .select("id, status")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (taskError) throw new Error(`Failed to load task: ${taskError.message}`);
+  if (!task) throw new Error("The selected task no longer exists.");
+
+  const { data: existing, error: existingError } = await supabase
+    .from("submissions")
+    .select("id")
+    .eq("task_id", taskId)
+    .maybeSingle();
+  if (existingError) throw new Error(`Failed to check task submissions: ${existingError.message}`);
+  if (existing) throw new Error("The selected task already has a submission.");
+
+  const now = new Date().toISOString();
+  const notes = `${TEST_SUBMISSION_MARKER}\nprevious_task_status=${task.status}\nCreated by an administrator to verify Review before WhatsApp integration.`;
+  const { data: inserted, error: insertError } = await supabase
+    .from("submissions")
+    .insert({
+      task_id: taskId,
+      collector_id: collectorId,
+      waste_type: "Test submission",
+      quantity_estimate: "0 kg (test)",
+      collector_notes: notes,
+      submitted_at: now,
+      review_status: "pending",
+    })
+    .select("id")
+    .single();
+  if (insertError) throw new Error(`Failed to create test submission: ${insertError.message}`);
+
+  const { error: updateError } = await supabase
+    .from("tasks")
+    .update({ status: "submitted", updated_at: now })
+    .eq("id", taskId);
+  if (updateError) {
+    await supabase.from("submissions").delete().eq("id", inserted.id);
+    throw new Error(`Test submission was rolled back because the task could not be updated: ${updateError.message}`);
+  }
+
+  const { error: eventError } = await supabase.from("task_events").insert({
+    task_id: taskId,
+    event_type: "test_submission_created",
+    previous_status: task.status,
+    new_status: "submitted",
+    actor_type: "operator",
+    actor_id: adminId,
+    metadata: { message: "Admin test submission created", submission_id: inserted.id, test_data: true },
+  });
+  if (eventError) {
+    await supabase.from("tasks").update({ status: task.status, updated_at: new Date().toISOString() }).eq("id", taskId);
+    await supabase.from("submissions").delete().eq("id", inserted.id);
+    throw new Error(`Test submission was rolled back because its audit event could not be created: ${eventError.message}`);
+  }
+
+  return inserted.id;
+}
+
+export async function deleteTestSubmission(submission: SubmissionWithRelations, adminId: string): Promise<void> {
+  if (!isTestSubmission(submission)) throw new Error("Only clearly marked admin test submissions can be removed here.");
+  const previousStatus = previousTaskStatusFromTestSubmission(submission);
+  if (!previousStatus) throw new Error("The original task status is missing from this test submission.");
+
+  const { data: task, error: taskError } = await supabase
+    .from("tasks")
+    .select("status")
+    .eq("id", submission.taskId)
+    .maybeSingle();
+  if (taskError) throw new Error(`Failed to load the related task: ${taskError.message}`);
+  if (!task) throw new Error("The related task no longer exists.");
+
+  const now = new Date().toISOString();
+  const { error: restoreError } = await supabase
+    .from("tasks")
+    .update({ status: previousStatus, updated_at: now })
+    .eq("id", submission.taskId);
+  if (restoreError) throw new Error(`The task could not be restored, so cleanup was stopped: ${restoreError.message}`);
+
+  const { data: deleted, error: deleteError } = await supabase
+    .from("submissions")
+    .delete()
+    .eq("id", submission.id)
+    .select("id");
+  if (deleteError || !deleted?.length) {
+    await supabase.from("tasks").update({ status: task.status, updated_at: new Date().toISOString() }).eq("id", submission.taskId);
+    throw new Error(deleteError?.message ?? "The test submission could not be deleted. Admin DELETE permission may be missing.");
+  }
+
+  const { error: eventError } = await supabase.from("task_events").insert({
+    task_id: submission.taskId,
+    event_type: "test_submission_removed",
+    previous_status: task.status,
+    new_status: previousStatus,
+    actor_type: "operator",
+    actor_id: adminId,
+    metadata: { message: "Admin test submission removed", submission_id: submission.id, test_data: true },
+  });
+  if (eventError) throw new Error(`The test submission was removed, but its cleanup audit event failed: ${eventError.message}`);
+}
+
 // ─── Approve / Reject ───────────────────────────────────────────────────────
 
 const UI_TO_DB_TASK_STATUS: Record<string, string> = {
@@ -246,9 +361,9 @@ export async function approveSubmission(
     p_decision: "approved",
     p_rejection_reason: null,
   });
-  if (error) throw new Error(`Failed to approve submission: ${error.message}`);
-  if (error === null) return;
-  // 1. Fetch the submission to get the task_id
+  if (!error) return;
+  if (!isMissingRpcError(error.message)) throw new Error(`Failed to approve submission: ${error.message}`);
+  // Compatibility path for projects where the transactional review RPC has not been deployed.
   const { data: sub, error: fetchErr } = await supabase
     .from("submissions")
     .select("id, task_id, review_status")
@@ -291,6 +406,7 @@ export async function approveSubmission(
     .eq("id", taskId);
 
   if (taskErr) {
+    await supabase.from("submissions").update({ review_status: "pending", reviewed_by: null, reviewed_at: null, updated_at: new Date().toISOString() }).eq("id", submissionId);
     // Task update failed — the submission is approved but the task is not.
     // This is a state inconsistency. We throw so the caller can surface an error
     // and refetch to show the actual current state.
@@ -314,8 +430,11 @@ export async function approveSubmission(
   });
 
   if (eventErr) {
-    // Non-fatal: the core state changes succeeded. Log but don't throw.
-    console.warn("Approved submission but failed to record task_event:", eventErr.message);
+    await Promise.all([
+      supabase.from("tasks").update({ status: "submitted", updated_at: new Date().toISOString() }).eq("id", taskId),
+      supabase.from("submissions").update({ review_status: "pending", reviewed_by: null, reviewed_at: null, updated_at: new Date().toISOString() }).eq("id", submissionId),
+    ]);
+    throw new Error(`Review was rolled back because the audit event could not be created: ${eventErr.message}`);
   }
 }
 
@@ -334,10 +453,10 @@ export async function rejectSubmission(
     p_decision: "rejected",
     p_rejection_reason: rejectionReason.trim(),
   });
-  if (error) throw new Error(`Failed to reject submission: ${error.message}`);
-  if (error === null) return;
+  if (!error) return;
+  if (!isMissingRpcError(error.message)) throw new Error(`Failed to reject submission: ${error.message}`);
 
-  // 1. Fetch the submission to get the task_id
+  // Compatibility path for projects where the transactional review RPC has not been deployed.
   const { data: sub, error: fetchErr } = await supabase
     .from("submissions")
     .select("id, task_id, review_status")
@@ -380,6 +499,7 @@ export async function rejectSubmission(
     .eq("id", taskId);
 
   if (taskErr) {
+    await supabase.from("submissions").update({ review_status: "pending", reviewed_by: null, reviewed_at: null, rejection_reason: null, updated_at: new Date().toISOString() }).eq("id", submissionId);
     throw new Error(
       `Submission rejected, but failed to update task status: ${taskErr.message}. Please refresh — task and submission state may be inconsistent.`,
     );
@@ -401,8 +521,16 @@ export async function rejectSubmission(
   });
 
   if (eventErr) {
-    console.warn("Rejected submission but failed to record task_event:", eventErr.message);
+    await Promise.all([
+      supabase.from("tasks").update({ status: "submitted", updated_at: new Date().toISOString() }).eq("id", taskId),
+      supabase.from("submissions").update({ review_status: "pending", reviewed_by: null, reviewed_at: null, rejection_reason: null, updated_at: new Date().toISOString() }).eq("id", submissionId),
+    ]);
+    throw new Error(`Review was rolled back because the audit event could not be created: ${eventErr.message}`);
   }
+}
+
+function isMissingRpcError(message: string) {
+  return message.includes("Could not find the function") || message.includes("schema cache");
 }
 
 // ─── useSubmissionStore (mock-data-compatible) ──────────────────────────────

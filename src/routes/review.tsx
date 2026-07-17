@@ -16,12 +16,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter,
 } from "@/components/ui/sheet";
-import { Search, X, ClipboardCheck, Clock3, CircleCheck as CheckCircle2, Circle as XCircle, MapPin, User, Phone, CircleAlert as AlertCircle, Image as ImageIcon, Weight, MessageSquare } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, X, ClipboardCheck, Clock3, CircleCheck as CheckCircle2, Circle as XCircle, MapPin, User, Phone, CircleAlert as AlertCircle, Image as ImageIcon, Weight, MessageSquare, FlaskConical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  fetchSubmissions, approveSubmission, rejectSubmission,
+  fetchSubmissions, approveSubmission, rejectSubmission, createTestSubmission,
+  deleteTestSubmission, isTestSubmission,
   type SubmissionWithRelations,
 } from "@/lib/submission-store";
+import { useTaskStore } from "@/lib/task-store";
+import { useCollectorStore } from "@/lib/collector-store";
+import type { Collector, Task } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/review")({
   head: () => ({
@@ -46,7 +54,9 @@ function formatDateTime(ts: string | null): string {
 }
 
 function ReviewPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { tasks } = useTaskStore();
+  const collectors = useCollectorStore();
   const [submissions, setSubmissions] = useState<SubmissionWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +67,8 @@ function ReviewPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [testSheetOpen, setTestSheetOpen] = useState(false);
+  const [cleanupTarget, setCleanupTarget] = useState<SubmissionWithRelations | null>(null);
 
   const loadSubmissions = useCallback(async () => {
     setLoading(true);
@@ -115,6 +127,10 @@ function ReviewPage() {
   }, [submissions, tab, zoneFilter, query]);
 
   const hasActiveFilters = query.trim() !== "" || zoneFilter !== "all";
+  const eligibleTestTasks = useMemo(() => {
+    const usedTaskIds = new Set(submissions.map((submission) => submission.taskId));
+    return tasks.filter((task) => !usedTaskIds.has(task.id));
+  }, [tasks, submissions]);
 
   function clearFilters() {
     setQuery("");
@@ -173,11 +189,47 @@ function ReviewPage() {
     }
   }
 
+  async function handleCreateTest(taskId: string, collectorId: string) {
+    if (!user || profile?.role !== "admin") return;
+    setActionLoading(true);
+    try {
+      const submissionId = await createTestSubmission({ taskId, collectorId, adminId: user.id });
+      await loadSubmissions();
+      setTab("pending");
+      setTestSheetOpen(false);
+      toast.success("Test submission created", { description: "It is stored in Supabase and ready for Review testing." });
+      setSelectedId(submissionId);
+      setDrawerOpen(true);
+    } catch (err) {
+      toast.error("Failed to create test submission", { description: err instanceof Error ? err.message : undefined });
+      await loadSubmissions();
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDeleteTest() {
+    if (!cleanupTarget || !user || profile?.role !== "admin") return;
+    setActionLoading(true);
+    try {
+      await deleteTestSubmission(cleanupTarget, user.id);
+      toast.success("Test submission removed", { description: "The related task was restored to its previous status." });
+      closeDrawer(false);
+      await loadSubmissions();
+    } catch (err) {
+      toast.error("Failed to remove test submission", { description: err instanceof Error ? err.message : undefined });
+      await loadSubmissions();
+    } finally {
+      setCleanupTarget(null);
+      setActionLoading(false);
+    }
+  }
+
   const emptyState = (() => {
     if (hasActiveFilters && filtered.length === 0) {
       return { title: "No submissions match your filters", description: "Try adjusting search or zone filters.", showClear: true };
     }
-    if (tab === "pending") return { title: "All caught up", description: "No submissions are waiting for review. New field proof will appear here when collectors complete tasks." };
+    if (tab === "pending") return { title: "No submissions waiting for review", description: "Collector proof submissions will appear here after the WhatsApp integration is connected." };
     if (tab === "approved") return { title: "No approved submissions yet", description: "Approved submissions will appear here once you review pending proof of work." };
     if (tab === "rejected") return { title: "No rejected submissions", description: "Returned submissions will appear here if proof of work needs revision." };
     return { title: "No submissions found", description: "Submissions will appear here once collectors submit proof of work." };
@@ -185,7 +237,15 @@ function ReviewPage() {
 
   return (
     <>
-      <PageHeader title="Submission Review" description="Verify cleanup evidence and approve or return field submissions" />
+      <PageHeader
+        title="Submission Review"
+        description="Verify cleanup evidence and approve or return field submissions"
+        actions={profile?.role === "admin" ? (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTestSheetOpen(true)}>
+            <FlaskConical className="h-4 w-4" /> Create test submission
+          </Button>
+        ) : undefined}
+      />
 
       <div className="space-y-4 p-5">
         {/* Summary metrics */}
@@ -284,7 +344,7 @@ function ReviewPage() {
                   >
                     <TableCell>
                       <div className="text-sm font-medium text-foreground">
-                        {s.task?.title ?? "Unknown task"}
+                        {s.task?.title ?? "Unknown task"} {isTestSubmission(s) && <Badge variant="muted" className="ml-1">Test</Badge>}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {s.task?.address ?? "—"}
@@ -320,19 +380,115 @@ function ReviewPage() {
         )}
       </div>
 
+      <TestSubmissionSheet
+        open={testSheetOpen}
+        onOpenChange={setTestSheetOpen}
+        tasks={eligibleTestTasks}
+        collectors={collectors}
+        loading={actionLoading}
+        onCreate={handleCreateTest}
+      />
+
       <SubmissionDetailDrawer
         submission={selected}
         open={drawerOpen}
         onOpenChange={closeDrawer}
         onApprove={handleApprove}
         onReject={handleReject}
+        onDeleteTest={(submission) => setCleanupTarget(submission)}
+        canManageTestData={profile?.role === "admin"}
         actionLoading={actionLoading}
       />
+
+      <AlertDialog open={!!cleanupTarget} onOpenChange={(open) => !open && setCleanupTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this test submission?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The marked test row will be permanently deleted and its task will return to the status it had before testing. Audit events remain for traceability.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep test submission</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDeleteTest} disabled={actionLoading}>
+              Delete test submission
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 // ─── Detail Drawer ──────────────────────────────────────────────────────────
+
+function TestSubmissionSheet({
+  open, onOpenChange, tasks, collectors, loading, onCreate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tasks: Task[];
+  collectors: Collector[];
+  loading: boolean;
+  onCreate: (taskId: string, collectorId: string) => void;
+}) {
+  const [taskId, setTaskId] = useState("");
+  const [collectorId, setCollectorId] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setTaskId("");
+      setCollectorId("");
+    }
+  }, [open]);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-md" onOpenChange={onOpenChange}>
+        <SheetHeader>
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-primary" />
+            <SheetTitle>Create test submission</SheetTitle>
+          </div>
+          <SheetDescription>
+            Admin-only utility for verifying Review before WhatsApp is connected. This creates one real, clearly marked Supabase row.
+          </SheetDescription>
+        </SheetHeader>
+        <SheetBody className="space-y-5">
+          <div className="rounded-md border border-info/30 bg-info/5 p-3 text-sm text-muted-foreground">
+            The selected task will move to Submitted while this test exists. Cleanup restores its previous status.
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Task</label>
+            <Select value={taskId} onValueChange={setTaskId}>
+              <SelectTrigger><SelectValue placeholder="Select a task without a submission" /></SelectTrigger>
+              <SelectContent>
+                {tasks.map((task) => <SelectItem key={task.id} value={task.id}>{task.title} · {task.status.replace(/_/g, " ")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {tasks.length === 0 && <p className="text-xs text-muted-foreground">Every available task already has a submission.</p>}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Collector</label>
+            <Select value={collectorId} onValueChange={setCollectorId}>
+              <SelectTrigger><SelectValue placeholder="Select an existing collector" /></SelectTrigger>
+              <SelectContent>
+                {collectors.map((collector) => <SelectItem key={collector.id} value={collector.id}>{collector.name} · {collector.zone}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {collectors.length === 0 && <p className="text-xs text-muted-foreground">No collectors are available.</p>}
+          </div>
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+          <Button onClick={() => onCreate(taskId, collectorId)} disabled={loading || !taskId || !collectorId}>
+            {loading ? "Creating..." : "Create test submission"}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 function SubmissionDetailDrawer({
   submission,
@@ -340,6 +496,8 @@ function SubmissionDetailDrawer({
   onOpenChange,
   onApprove,
   onReject,
+  onDeleteTest,
+  canManageTestData,
   actionLoading,
 }: {
   submission: SubmissionWithRelations | null;
@@ -347,6 +505,8 @@ function SubmissionDetailDrawer({
   onOpenChange: (open: boolean) => void;
   onApprove: () => void;
   onReject: (reason: string) => void;
+  onDeleteTest: (submission: SubmissionWithRelations) => void;
+  canManageTestData: boolean;
   actionLoading: boolean;
 }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -362,6 +522,7 @@ function SubmissionDetailDrawer({
   if (!submission) return null;
 
   const isPending = submission.reviewStatus === "pending";
+  const isTest = isTestSubmission(submission);
   const task = submission.task;
   const collector = submission.collector;
 
@@ -383,6 +544,7 @@ function SubmissionDetailDrawer({
           </SheetDescription>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <ReviewStatusBadge status={submission.reviewStatus} />
+            {isTest && <Badge variant="info">Admin test data</Badge>}
             {task && <Badge variant="muted">{task.priority} priority</Badge>}
             {task && <Badge variant="muted">{task.hotspotType}</Badge>}
           </div>
@@ -484,9 +646,19 @@ function SubmissionDetailDrawer({
         </SheetBody>
 
         {/* Footer actions */}
-        {isPending && (
+        {(isPending || isTest) && (
           <SheetFooter className="flex-col gap-2 sm:flex-row">
-            {showRejectForm ? (
+            {isTest && canManageTestData && !showRejectForm && (
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive sm:mr-auto"
+                onClick={() => onDeleteTest(submission)}
+                disabled={actionLoading}
+              >
+                <Trash2 className="h-4 w-4" /> Delete test submission
+              </Button>
+            )}
+            {isPending && (showRejectForm ? (
               <>
                 <Button
                   variant="outline"
@@ -520,7 +692,7 @@ function SubmissionDetailDrawer({
                   {actionLoading ? "Approving..." : "Approve submission"}
                 </Button>
               </>
-            )}
+            ))}
           </SheetFooter>
         )}
       </SheetContent>
