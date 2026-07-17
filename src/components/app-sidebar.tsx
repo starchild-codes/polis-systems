@@ -54,12 +54,12 @@ export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNa
               className={cn(
                 "relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-[color,background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 active:translate-y-px motion-reduce:transform-none",
                 active
-                  ? "bg-white/[0.11] text-white shadow-sm before:absolute before:left-0 before:h-6 before:w-1 before:rounded-r-full before:bg-primary"
+                  ? "bg-white/[0.14] text-white shadow-sm before:absolute before:left-0 before:h-6 before:w-1 before:rounded-r-full before:bg-white/90"
                   : "text-sidebar-foreground/75 hover:bg-white/[0.07] hover:text-white",
                 collapsed && "justify-center px-2",
               )}
             >
-              <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-sky-300", collapsed && "mx-auto")} />
+              <Icon className={cn("h-[18px] w-[18px] shrink-0", active && "text-white", collapsed && "mx-auto")} />
               {!collapsed && <span>{item.title}</span>}
             </Link>
           );
