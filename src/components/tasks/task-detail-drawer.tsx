@@ -3,7 +3,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, PriorityLabel } from "@/components/status-badge";
+import { HotspotBadge, PriorityLabel, StatusBadge, ZoneBadge } from "@/components/status-badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -74,9 +74,9 @@ export function TaskDetailDrawer({
             <section className="space-y-2">
               <p className="text-foreground">{task.description}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>Hotspot: {task.hotspotType}</span>
+                <span className="flex items-center gap-1.5">Hotspot: <HotspotBadge type={task.hotspotType} /></span>
                 <span className="flex items-center gap-1"><PriorityLabel priority={task.priority} /> priority</span>
-                <span>Zone: {task.zone}</span>
+                <span className="flex items-center gap-1.5">Zone: <ZoneBadge zone={task.zone} /></span>
               </div>
             </section>
 

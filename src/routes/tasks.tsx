@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { PageHeader, EmptyState } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge, PriorityLabel } from "@/components/status-badge";
+import { HotspotBadge, PriorityLabel, StatusBadge, ZoneBadge } from "@/components/status-badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -380,11 +380,11 @@ function TasksPage() {
                       </TableCell>
                       <TableCell><StatusBadge status={t.status} /></TableCell>
                       <TableCell><PriorityLabel priority={t.priority} /></TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{t.hotspotType}</TableCell>
+                      <TableCell><HotspotBadge type={t.hotspotType} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {t.assignee ?? <span className="italic text-muted-foreground/75">Unassigned</span>}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{t.zone}</TableCell>
+                      <TableCell><ZoneBadge zone={t.zone} /></TableCell>
                       <TableCell className={overdue ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
                         <span className="inline-flex items-center gap-1">
                           {overdue && <AlertTriangle className="h-3 w-3" />}
