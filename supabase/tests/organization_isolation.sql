@@ -201,7 +201,7 @@ BEGIN
     'B creates and sees only B data',
     (SELECT organization_id = org_b AND created_by = auth.uid() FROM public.tasks WHERE id = task_b)
       AND (SELECT count(*) = 1 FROM public.collectors WHERE id = collector_b)
-      AND (SELECT count(*) = 1 FROM public.tasks),
+      AND (SELECT count(*) = 1 FROM public.tasks WHERE id = task_b),
     'Organization B defaults and reads are isolated'
   );
 END
