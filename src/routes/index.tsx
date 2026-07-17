@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   ArrowRight,
   BarChart3,
+  Camera,
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
@@ -59,10 +60,16 @@ function LandingPage() {
             title="A practical operating layer for cleaner neighborhoods."
             description="Coordinate cleaner neighborhoods, one verified task at a time. Polis Systems connects field collectors and operators through one clear workflow for assigning, documenting, verifying, and reporting cleanup work."
           />
-          <div className="landing-section-reveal mt-10 grid gap-5 md:grid-cols-3">
-            <Feature icon={<ClipboardCheck className="h-5 w-5" />} title="Clear assignments" text="Give every cleanup task a location, priority, deadline, and accountable collector." />
-            <Feature icon={<ShieldCheck className="h-5 w-5" />} title="Verified outcomes" text="Review field proof before work is counted toward operational impact." />
-            <Feature icon={<Users className="h-5 w-5" />} title="Connected teams" text="Keep operators, partners, and collectors aligned across every zone." />
+          <div className="landing-section-reveal mt-10 grid items-stretch gap-5 lg:grid-cols-[18rem_1fr]">
+            <figure className="surface-card overflow-hidden">
+              <img loading="lazy" className="aspect-video w-full object-cover" src="/collector-fieldwork.svg" alt="Collector working alongside gathered recyclable materials" />
+              <figcaption className="px-5 py-4 text-sm font-medium leading-6 text-navy-700">Collectors connect each assignment to visible work on the ground.</figcaption>
+            </figure>
+            <div className="grid gap-5 sm:grid-cols-3">
+              <Feature icon={<ClipboardCheck className="h-5 w-5" />} title="Clear assignments" text="Give every cleanup task a location, priority, deadline, and accountable collector." />
+              <Feature icon={<ShieldCheck className="h-5 w-5" />} title="Verified outcomes" text="Review field proof before work is counted toward operational impact." />
+              <Feature icon={<Users className="h-5 w-5" />} title="Connected teams" text="Keep operators, partners, and collectors aligned across every zone." />
+            </div>
           </div>
         </section>
 
@@ -77,10 +84,27 @@ function LandingPage() {
             <ol className="landing-section-reveal mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <WorkflowStep number="01" icon={<ClipboardCheck className="h-4 w-4" />} title="Create and assign" text="Managers define the work, location, priority, and responsible collector." />
               <WorkflowStep number="02" icon={<Send className="h-4 w-4" />} title="Deliver clearly" text="The intended WhatsApp-first workflow will bring assignments to collectors." upcoming />
-              <WorkflowStep number="03" icon={<MessageCircle className="h-4 w-4" />} title="Submit proof" text="Collectors document the completed work and send supporting evidence." />
+              <WorkflowStep number="03" icon={<MessageCircle className="h-4 w-4" />} title="Submit proof" text="Collectors post before and after images that document the completed collection work." />
               <WorkflowStep number="04" icon={<FileCheck2 className="h-4 w-4" />} title="Review the work" text="Managers approve valid proof or return it with a clear reason." />
               <WorkflowStep number="05" icon={<BarChart3 className="h-4 w-4" />} title="Make it visible" text="Reports turn operational records into a shared view of progress." />
             </ol>
+            <div className="landing-section-reveal mt-8 grid overflow-hidden rounded-2xl border border-navy-100 bg-white shadow-surface md:grid-cols-[1fr_0.9fr]">
+              <figure className="bg-navy-50 p-3 sm:p-5">
+                <img loading="lazy" className="aspect-square w-full rounded-xl object-cover ring-1 ring-navy-100" src="/cleanup-before-after.svg" alt="The same cleanup site before collection, with dumped waste, and after collection, with the area cleared" />
+                <figcaption className="sr-only">Before and after photographic proof of completed collection work.</figcaption>
+              </figure>
+              <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+                <div className="icon-tile h-11 w-11"><Camera className="h-5 w-5" /></div>
+                <p className="mt-5 text-sm font-semibold text-primary">Before-and-after proof</p>
+                <h3 className="mt-2 text-2xl font-semibold leading-tight tracking-tight text-navy-950 sm:text-3xl">Collectors show the change, not just mark a task complete.</h3>
+                <p className="mt-4 leading-7 text-navy-600">After collection work, collectors post clear before and after images. The paired proof gives operators a reliable visual record to review before approving the task.</p>
+                <ul className="mt-5 space-y-3 text-sm text-navy-700">
+                  <Benefit>The before image records the starting condition</Benefit>
+                  <Benefit>The after image confirms the completed cleanup</Benefit>
+                  <Benefit>Review decisions stay connected to the task record</Benefit>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -99,7 +123,7 @@ function LandingPage() {
           <div className="landing-section-reveal mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-6 lg:gap-16 lg:px-8 lg:py-24">
             <div className="relative">
               <div aria-hidden="true" className="absolute -inset-3 -z-10 rounded-[1.75rem] bg-primary/5" />
-              <img loading="lazy" className="h-80 w-full rounded-2xl object-cover shadow-surface ring-1 ring-navy-100 sm:h-[26rem]" src="/images/collector-impact.jpg" alt="Community cleanup activity" />
+              <img loading="lazy" className="h-80 w-full rounded-2xl object-cover shadow-surface ring-1 ring-navy-100 sm:h-[26rem]" src="/collector-impact.svg" alt="Collector transporting gathered waste for responsible disposal" />
             </div>
             <div>
               <div className="icon-tile h-11 w-11"><MapPin className="h-5 w-5" /></div>
