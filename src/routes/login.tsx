@@ -4,7 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader as Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
+import { Loader as Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -67,9 +68,7 @@ export function AuthPage({ mode }: { mode: "signin" | "signup" }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
         <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <ShieldCheck className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <BrandLogo eager className="mx-auto mb-4 h-14 w-14 shadow-sm ring-1 ring-border" />
           <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Confirm your email, then sign in. Your account will remain awaiting approval until an administrator grants access.
@@ -85,9 +84,7 @@ export function AuthPage({ mode }: { mode: "signin" | "signup" }) {
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted p-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <ShieldCheck className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <BrandLogo eager className="mb-4 h-14 w-14 shadow-sm ring-1 ring-border" />
           <h1 className="text-xl font-semibold text-foreground">
             {isSignUp ? "Create account" : "Sign in"}
           </h1>

@@ -2,13 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { BrandLogo } from "@/components/brand-logo";
 
 function Logo() {
   return (
     <Link to="/" className="focus-ring flex items-center gap-2.5 rounded-xl">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm shadow-primary/20">
-        P
-      </div>
+      <BrandLogo decorative eager className="h-10 w-10 shadow-sm ring-1 ring-navy-100" />
       <span className="text-lg font-semibold tracking-tight text-navy-950">
         Polis <span className="text-primary">Systems</span>
       </span>

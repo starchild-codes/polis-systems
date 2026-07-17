@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 
 let brandRevealHasPlayed = false;
 
@@ -104,6 +105,7 @@ export function LandingBrandReveal() {
       </svg>
 
       <div className="brand-reveal__identity">
+        <BrandLogo decorative eager className="brand-reveal__logo" />
         <h1 className="brand-reveal__wordmark" aria-label="Polis Systems">
           {"POLIS SYSTEMS".split("").map((character, index) => (
             <span

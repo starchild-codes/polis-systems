@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 const nav = [
   { title: "Overview", url: "/overview", icon: LayoutDashboard },
@@ -29,9 +30,7 @@ export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNa
       )}
     >
       <div className={cn("flex h-[4.5rem] items-center gap-2.5 border-b border-sidebar-border px-4", collapsed && "justify-center px-2")}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm ring-1 ring-white/20">
-          <ShieldCheck className="h-5 w-5" />
-        </div>
+        <BrandLogo decorative eager className="h-9 w-9 shadow-sm ring-1 ring-white/25" />
         {!collapsed && (
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-white">Polis Systems</div>

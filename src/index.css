@@ -251,6 +251,17 @@ body {
   text-align: center;
 }
 
+.brand-reveal__logo {
+  height: clamp(4.75rem, 7vw, 6.25rem);
+  width: clamp(4.75rem, 7vw, 6.25rem);
+  margin-bottom: 1.25rem;
+  border: 3px solid hsl(0 0% 100% / 0.88);
+  box-shadow: 0 18px 42px hsl(207 65% 20% / 0.26);
+  opacity: 0;
+  transform: translateY(10px) scale(0.86) rotate(-3deg);
+  animation: brand-logo-snap 0.55s cubic-bezier(0.2, 0.84, 0.3, 1.16) 1.45s forwards;
+}
+
 .brand-reveal__wordmark {
   --brand-tracking: 0.055em;
   --brand-tracking-start: 0.075em;
@@ -299,6 +310,7 @@ body {
 .brand-reveal--complete .brand-reveal__connector,
 .brand-reveal--complete .brand-reveal__trace,
 .brand-reveal--complete .brand-reveal__pulse,
+.brand-reveal--complete .brand-reveal__logo,
 .brand-reveal--complete .brand-reveal__wordmark,
 .brand-reveal--complete .brand-reveal__letter,
 .brand-reveal--complete .brand-reveal__tagline {
@@ -320,6 +332,12 @@ body {
 
 @keyframes brand-identity-in {
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes brand-logo-snap {
+  0% { opacity: 0; transform: translateY(10px) scale(0.86) rotate(-3deg); }
+  72% { opacity: 1; transform: translateY(-2px) scale(1.025) rotate(0.5deg); }
+  100% { opacity: 1; transform: none; }
 }
 
 @keyframes brand-letter-snap {
@@ -356,6 +374,12 @@ body {
     font-size: clamp(1.75rem, 8.8vw, 3rem);
   }
 
+  .brand-reveal__logo {
+    height: 4.25rem;
+    width: 4.25rem;
+    margin-bottom: 0.9rem;
+  }
+
   .brand-reveal__tagline {
     margin-top: 0.85rem;
     font-size: clamp(1rem, 4.7vw, 1.35rem);
@@ -390,6 +414,7 @@ body {
   }
 
   .brand-reveal__pulse,
+  .brand-reveal__logo,
   .brand-reveal__wordmark,
   .brand-reveal__letter,
   .brand-reveal__tagline {

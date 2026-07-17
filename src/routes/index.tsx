@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { LandingBrandReveal } from "@/components/landing-brand-reveal";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -137,7 +138,10 @@ function LandingPage() {
       <footer className="border-t border-navy-100 bg-navy-50/70">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-[1fr_auto] sm:items-end md:px-6 lg:px-8">
           <div className="max-w-md">
-            <p className="text-base font-semibold text-navy-950">Polis <span className="text-primary">Systems</span></p>
+            <div className="flex items-center gap-2.5">
+              <BrandLogo decorative className="h-9 w-9 shadow-sm ring-1 ring-navy-100" />
+              <p className="text-base font-semibold text-navy-950">Polis <span className="text-primary">Systems</span></p>
+            </div>
             <p className="mt-1 text-sm font-medium text-navy-700">Cleaner Cities. Better Work.</p>
             <p className="mt-3 text-sm leading-6 text-navy-600">A professional operations platform for cleanup organizations, municipalities, NGOs, and field teams.</p>
           </div>
