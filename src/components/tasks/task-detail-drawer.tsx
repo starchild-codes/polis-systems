@@ -70,7 +70,7 @@ export function TaskDetailDrawer({
             <SheetDescription className="text-left">{task.id}</SheetDescription>
           </SheetHeader>
 
-          <div className="mt-6 space-y-6 pb-6 text-sm">
+          <div className="space-y-6 px-5 py-5 text-sm sm:px-6">
             <section className="space-y-2">
               <p className="text-foreground">{task.description}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -80,7 +80,7 @@ export function TaskDetailDrawer({
               </div>
             </section>
 
-            <section className="grid grid-cols-2 gap-3 rounded-md border border-border bg-card p-3">
+            <section className="surface-card grid gap-4 p-4 sm:grid-cols-2">
               <Detail icon={<User className="h-3.5 w-3.5" />} label="Collector" value={task.assignee ?? "Unassigned"} />
               <Detail icon={<Phone className="h-3.5 w-3.5" />} label="Collector phone" value={collectors.find((c) => c.name === task.assignee)?.phone ?? "—"} />
               <Detail
@@ -92,7 +92,7 @@ export function TaskDetailDrawer({
               <Detail icon={<Clock className="h-3.5 w-3.5" />} label="Last updated" value={formatFriendlyDateTime(task.updatedAt)} />
             </section>
 
-            <section className="space-y-1.5 rounded-md border border-border bg-card p-3">
+            <section className="surface-card space-y-1.5 p-4">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" /> Location
               </div>
@@ -120,11 +120,11 @@ export function TaskDetailDrawer({
             )}
 
             {task.hasReferencePhoto && (
-              <section className="grid grid-cols-2 gap-2">
-                <div className="grid aspect-video place-items-center rounded-md border border-dashed border-border bg-muted text-muted-foreground">
+              <section className="grid gap-3 sm:grid-cols-2">
+                <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-border bg-muted/60 text-muted-foreground">
                   <div className="flex flex-col items-center gap-1 text-xs"><ImageIcon className="h-5 w-5" /> Before</div>
                 </div>
-                <div className="grid aspect-video place-items-center rounded-md border border-dashed border-border bg-muted text-muted-foreground">
+                <div className="grid aspect-video place-items-center rounded-xl border border-dashed border-border bg-muted/60 text-muted-foreground">
                   <div className="flex flex-col items-center gap-1 text-xs"><ImageIcon className="h-5 w-5" /> After</div>
                 </div>
               </section>
@@ -148,7 +148,7 @@ export function TaskDetailDrawer({
             </section>
           </div>
 
-          <SheetFooter className="sticky bottom-0 -mx-6 flex-row flex-wrap gap-2 border-t border-border bg-background px-6 py-4">
+          <SheetFooter className="sticky bottom-0 flex-row flex-wrap gap-2">
           {renderActions(task, { openAssignDialog, setCancelOpen, onAction })}
           </SheetFooter>
         </SheetContent>
@@ -160,7 +160,7 @@ export function TaskDetailDrawer({
             <SheetTitle>{assignMode === "assign" ? "Assign collector" : "Reassign collector"}</SheetTitle>
             <SheetDescription>Choose an active collector for {task.title}.</SheetDescription>
           </SheetHeader>
-          <div className="mt-4 space-y-3">
+          <div className="space-y-3 px-5 py-5 sm:px-6">
             {collectors.length === 0 ? (
               <p className="text-sm text-muted-foreground">No active collectors available for assignment.</p>
             ) : (

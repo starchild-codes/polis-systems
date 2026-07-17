@@ -20,9 +20,9 @@ export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
-      <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in" onClick={() => onOpenChange(false)} />
+      <div role="alertdialog" aria-modal="true" className="relative z-10 w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-floating animate-scale-in">
         {children}
       </div>
     </div>
@@ -59,7 +59,7 @@ export function AlertDialogCancel({
   return (
     <button
       onClick={onClick}
-      className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent"
+      className="focus-ring inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
     >
       {children}
     </button>
@@ -82,7 +82,7 @@ export function AlertDialogAction({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+        "focus-ring inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
     >

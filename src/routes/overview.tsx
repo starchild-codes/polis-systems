@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { CircleAlert as AlertCircle, CheckCircle2, ClipboardCheck, Clock3, Users } from "lucide-react";
+import { CircleAlert as AlertCircle, CheckCircle2, ClipboardCheck, Clock3, ShieldCheck, Users } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,8 +122,8 @@ function OverviewPage() {
     return (
       <>
         <PageHeader title="Overview" description="Operations snapshot across all zones" />
-        <div className="mx-5 mt-5 flex flex-col items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
-          <AlertCircle className="h-6 w-6 text-destructive" />
+        <div className="mx-4 mt-5 flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface sm:mx-5 lg:mx-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10"><AlertCircle className="h-5 w-5 text-destructive" /></div>
           <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load overview</h3>
           <p className="mt-1 text-sm text-muted-foreground">{error}</p>
         </div>
@@ -134,8 +134,8 @@ function OverviewPage() {
   return (
     <>
       <PageHeader title="Overview" description="Operations snapshot across all zones" />
-      <div className="space-y-5 p-5">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="page-shell animate-fade-up">
+        <section aria-label="Operations metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Active Tasks" value={stats?.activeTasks ?? 0} icon={<ClipboardCheck className="h-4 w-4" />} />
           <Metric label="Verified Submissions" value={stats?.approvedSubmissions ?? 0} icon={<CheckCircle2 className="h-4 w-4" />} tone="success" />
           <Metric label="Field Collectors" value={stats?.totalCollectors ?? 0} icon={<Users className="h-4 w-4" />} />
@@ -145,9 +145,9 @@ function OverviewPage() {
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <ActivityCard title="Recent Tasks" viewAllTo="/tasks">
             {recentTasks.length === 0 ? (
-              <EmptyState title="No tasks yet" description="New cleanup tasks will appear here." />
+              <EmptyState icon={<ClipboardCheck className="h-5 w-5" />} title="No tasks yet" description="New cleanup tasks will appear here." />
             ) : recentTasks.map((task) => (
-              <div key={task.id} className="flex min-w-0 items-center justify-between gap-4 px-4 py-3">
+              <div key={task.id} className="flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-primary/[0.035]">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.address || "No location provided"}</p>
@@ -159,9 +159,9 @@ function OverviewPage() {
 
           <ActivityCard title="Recent Submissions" viewAllTo="/review">
             {recentSubmissions.length === 0 ? (
-              <EmptyState title="No submissions yet" description="Submissions from field collectors will appear here." />
+              <EmptyState icon={<ShieldCheck className="h-5 w-5" />} title="No submissions yet" description="Submissions from field collectors will appear here." />
             ) : recentSubmissions.map((submission) => (
-              <div key={submission.id} className="flex min-w-0 items-center justify-between gap-4 px-4 py-3">
+              <div key={submission.id} className="flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-primary/[0.035]">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{submission.collectorName}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -169,6 +169,7 @@ function OverviewPage() {
                   </p>
                 </div>
                 <Badge variant={submission.reviewStatus === "approved" ? "success" : submission.reviewStatus === "rejected" ? "destructive" : "warning"}>
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
                   {submission.reviewStatus === "approved" ? "Verified" : submission.reviewStatus}
                 </Badge>
               </div>
@@ -184,13 +185,13 @@ function OverviewLoading() {
   return (
     <>
       <PageHeader title="Overview" description="Operations snapshot across all zones" />
-      <div className="space-y-5 p-5">
+      <div className="page-shell">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-[104px] rounded-md" />)}
+          {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-[116px] rounded-xl" />)}
         </div>
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <Skeleton className="h-[300px] rounded-md" />
-          <Skeleton className="h-[300px] rounded-md" />
+          <Skeleton className="h-[320px] rounded-xl" />
+          <Skeleton className="h-[320px] rounded-xl" />
         </div>
       </div>
     </>
@@ -199,10 +200,10 @@ function OverviewLoading() {
 
 function ActivityCard({ title, viewAllTo, children }: { title: string; viewAllTo: "/tasks" | "/review"; children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        <Link to={viewAllTo} className="text-xs font-medium text-primary hover:underline">View all</Link>
+    <div className="surface-card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border/80 px-5 py-4">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+        <Link to={viewAllTo} className="focus-ring rounded-md px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 hover:text-primary-dark">View all</Link>
       </div>
       <div className="divide-y divide-border">{children}</div>
     </div>
@@ -212,12 +213,12 @@ function ActivityCard({ title, viewAllTo, children }: { title: string; viewAllTo
 function Metric({ label, value, icon, tone = "default" }: { label: string; value: number; icon: React.ReactNode; tone?: "default" | "warning" | "success" }) {
   const toneClass = tone === "warning" ? "text-warning" : tone === "success" ? "text-success" : "text-primary";
   return (
-    <div className="rounded-md border border-border bg-card p-4">
+    <div className="interactive-card group p-5">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <span className={toneClass}>{icon}</span>
+        <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneClass}`}>{icon}</span>
       </div>
-      <div className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{value}</div>
+      <div className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-foreground tabular-nums">{value}</div>
     </div>
   );
 }

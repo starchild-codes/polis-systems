@@ -48,8 +48,10 @@ export function SelectTrigger({ className, children, ...props }: React.HTMLAttri
     <button
       type="button"
       onClick={() => ctx.setOpen(!ctx.open)}
+      aria-haspopup="listbox"
+      aria-expanded={ctx.open}
       className={cn(
-        "flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex h-10 w-full items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm shadow-sm shadow-slate-950/[0.02] transition-[border-color,box-shadow,background-color] hover:border-primary/25 hover:bg-accent/40 focus-visible:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
         className,
       )}
       {...props}
@@ -76,9 +78,9 @@ export function SelectContent({ children, className }: { children: ReactNode; cl
   if (!ctx.open) return null;
   return (
     <div className={cn(
-      "absolute top-full left-0 z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md scrollbar-thin",
+      "absolute left-0 top-full z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-lg border border-border bg-popover p-1.5 shadow-floating scrollbar-thin animate-scale-in",
       className,
-    )}>
+    )} role="listbox">
       {children}
     </div>
   );
@@ -90,13 +92,24 @@ export function SelectItem({ value, children, className }: { value: string; chil
   const isSelected = ctx.value === value;
   return (
     <div
+      role="option"
+      aria-selected={isSelected}
+      tabIndex={0}
       onClick={() => {
         ctx.onValueChange(value);
         ctx.setSelectedLabel(typeof children === "string" ? children : String(children));
         ctx.setOpen(false);
       }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          ctx.onValueChange(value);
+          ctx.setSelectedLabel(typeof children === "string" ? children : String(children));
+          ctx.setOpen(false);
+        }
+      }}
       className={cn(
-        "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent",
+        "relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-accent focus:bg-accent",
         className,
       )}
     >

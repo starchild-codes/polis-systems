@@ -292,16 +292,16 @@ function ReportsPage() {
         }
       />
 
-      <div className="space-y-4 p-5">
+      <div className="page-shell animate-fade-up">
         {(tasksError || collectorsError) && (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             Unable to load report data: {tasksError ?? collectorsError}
           </div>
         )}
         {/* Filters */}
-        <section className="rounded-md border border-border bg-card">
-          <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+        <section className="surface-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-border/80 bg-muted/20 px-5 py-3.5">
+            <span className="icon-tile h-8 w-8"><Filter className="h-4 w-4" /></span>
             <h2 className="text-sm font-semibold text-foreground">Filters</h2>
             {hasActiveFilters && (
               <Button
@@ -314,7 +314,7 @@ function ReportsPage() {
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {/* Date range */}
             <div className="space-y-1.5">
               <Label className="text-xs">From date</Label>
@@ -461,7 +461,7 @@ function ReportsPage() {
         </section>
 
         {/* Summary metrics */}
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section aria-label="Report metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Kpi label="Open Tasks" value={openTasksCount} icon={<Clock className="h-4 w-4" />} />
           <Kpi
             label="Awaiting Review"
@@ -485,7 +485,7 @@ function ReportsPage() {
         {/* Tasks by Status + Tasks by Zone */}
         <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {/* Tasks by Status */}
-          <div className="rounded-md border border-border bg-card">
+          <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">
               <h2 className="text-sm font-semibold text-foreground">Tasks by Status</h2>
               <p className="text-xs text-muted-foreground">
@@ -522,7 +522,7 @@ function ReportsPage() {
           </div>
 
           {/* Tasks by Zone */}
-          <div className="rounded-md border border-border bg-card">
+          <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">
               <h2 className="text-sm font-semibold text-foreground">Tasks by Zone</h2>
               <p className="text-xs text-muted-foreground">Distribution across pilot zones</p>
@@ -560,7 +560,7 @@ function ReportsPage() {
         {/* Waste Quantity by Type + Cleanup Activity Over Time */}
         <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {/* Waste Quantity by Type */}
-          <div className="rounded-md border border-border bg-card">
+          <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">
               <h2 className="text-sm font-semibold text-foreground">Waste Quantity by Type</h2>
               <p className="text-xs text-muted-foreground">Estimated vs approved (kg)</p>
@@ -601,7 +601,7 @@ function ReportsPage() {
           </div>
 
           {/* Cleanup Activity Over Time */}
-          <div className="rounded-md border border-border bg-card">
+          <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">
               <h2 className="text-sm font-semibold text-foreground">Cleanup Activity Over Time</h2>
               <p className="text-xs text-muted-foreground">
@@ -611,8 +611,8 @@ function ReportsPage() {
             <div className="px-4 pt-3">
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <Legend swatch="bg-primary-dark" label="Assigned" />
-                <Legend swatch="bg-indigo" label="Submitted" />
-                <Legend swatch="bg-teal" label="Approved" />
+                <Legend swatch="bg-warning" label="Submitted" />
+                <Legend swatch="bg-success" label="Approved" />
               </div>
             </div>
             <div className="flex gap-3 px-4 pb-3 pt-3 h-32">
@@ -627,14 +627,14 @@ function ReportsPage() {
                       title={`${d.assigned} assigned`}
                     />
                     <div
-                      className="w-2 rounded-t bg-indigo"
+                      className="w-2 rounded-t bg-warning"
                       style={{
                         height: `${(d.submitted / maxDailyValue) * 100}%`,
                       }}
                       title={`${d.submitted} submitted`}
                     />
                     <div
-                      className="w-2 rounded-t bg-teal"
+                      className="w-2 rounded-t bg-success"
                       style={{
                         height: `${(d.approved / maxDailyValue) * 100}%`,
                       }}
@@ -649,7 +649,7 @@ function ReportsPage() {
         </section>
 
         {/* Collector Performance Table */}
-        <section className="rounded-md border border-border bg-card">
+        <section className="surface-card overflow-auto scrollbar-thin">
           <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Collector Performance</h2>
@@ -698,7 +698,7 @@ function ReportsPage() {
         </section>
 
         {/* Weekly Summary */}
-        <section className="rounded-md border border-border bg-card">
+        <section className="surface-card overflow-hidden">
           <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Weekly Summary</h2>
@@ -776,14 +776,14 @@ function Kpi({
         ? "text-warning"
         : "text-muted-foreground";
   return (
-    <div className="rounded-md border border-border bg-card p-3.5">
+    <div className="interactive-card group p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </span>
-        <span className={toneClass}>{icon}</span>
+        <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneClass}`}>{icon}</span>
       </div>
-      <div className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{value}</div>
     </div>
   );
 }

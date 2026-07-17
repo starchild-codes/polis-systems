@@ -5,17 +5,17 @@ type Variant = "default" | "outline" | "ghost" | "destructive" | "secondary";
 type Size = "default" | "sm" | "icon";
 
 const variantClasses: Record<Variant, string> = {
-  default: "bg-primary text-primary-foreground hover:bg-primary/90",
-  outline: "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
+  default: "bg-primary text-primary-foreground shadow-sm shadow-primary/15 hover:bg-primary-dark",
+  outline: "border border-border bg-background shadow-sm hover:border-primary/25 hover:bg-accent hover:text-accent-foreground",
   ghost: "hover:bg-accent hover:text-accent-foreground",
-  destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  destructive: "bg-destructive text-destructive-foreground shadow-sm shadow-destructive/15 hover:bg-destructive/90",
   secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
 };
 
 const sizeClasses: Record<Size, string> = {
-  default: "h-9 px-4 py-2 text-sm",
-  sm: "h-8 px-3 text-xs",
-  icon: "h-9 w-9",
+  default: "h-10 px-4 py-2 text-sm",
+  sm: "h-9 px-3 text-xs",
+  icon: "h-10 w-10",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -27,7 +27,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", asChild, ...props }, ref) => {
     const classes = cn(
-      "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px disabled:pointer-events-none disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none",
       variantClasses[variant],
       sizeClasses[size],
       className,
@@ -58,7 +58,7 @@ Button.displayName = "Button";
 
 export const buttonVariants = ({ variant = "default", size = "default", className }: { variant?: Variant; size?: Size; className?: string }) =>
   cn(
-    "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px disabled:pointer-events-none disabled:opacity-50 motion-reduce:transform-none motion-reduce:transition-none",
     variantClasses[variant],
     sizeClasses[size],
     className,

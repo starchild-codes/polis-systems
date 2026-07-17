@@ -22,7 +22,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, Users, UserCheck, UserPlus, UserX, Phone, MapPin, Calendar } from "lucide-react";
+import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, Users, UserCheck, UserPlus, UserX, Phone, MapPin, Calendar, Pencil, Ban, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   COLLECTOR_STATUSES, COLLECTOR_TYPES, PREFERRED_LANGUAGES,
@@ -74,7 +74,8 @@ const STATUS_STYLE: Record<CollectorStatus, string> = {
 
 function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLE[status]}`}>
+    <span className={`inline-flex min-h-5 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
       {STATUS_LABEL[status]}
     </span>
   );
@@ -207,9 +208,9 @@ function CollectorsPage() {
         }
       />
 
-      <div className="space-y-4 p-5">
+      <div className="page-shell animate-fade-up">
         {/* Summary metrics */}
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section aria-label="Collector metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Total Collectors" value={counts.total} icon={<Users className="h-4 w-4" />} />
           <Metric label="Active" value={counts.active} icon={<UserCheck className="h-4 w-4" />} tone="success" />
           <Metric label="Pending Registration" value={counts.pending} icon={<UserPlus className="h-4 w-4" />} tone="warning" />
@@ -217,14 +218,14 @@ function CollectorsPage() {
         </section>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-3">
+        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
           <div className="relative min-w-0 flex-1 basis-56">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name, phone, or zone"
-              className="h-9 pl-8"
+              className="pl-8"
             />
           </div>
           <Select className="!w-[9.5rem]" value={status} onValueChange={(v) => setStatus(v as CollectorStatus | "all")}>
@@ -260,7 +261,7 @@ function CollectorsPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="space-y-3 rounded-md border border-border bg-card p-4">
+          <div className="surface-card space-y-3 p-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-8 w-8 rounded-full" />
@@ -274,7 +275,7 @@ function CollectorsPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface">
             <AlertCircle className="h-6 w-6 text-destructive" />
             <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load collectors</h3>
             <p className="mt-1 text-sm text-muted-foreground">{error}</p>
@@ -289,15 +290,16 @@ function CollectorsPage() {
           />
         ) : filtered.length === 0 ? (
           <EmptyState
+            icon={<ListFilter className="h-5 w-5" />}
             title="No collectors match your filters"
             description="Try adjusting or clearing your filters to see more collectors."
             action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>}
           />
         ) : (
-          <div className="overflow-auto rounded-md border border-border bg-card">
+          <div className="surface-card overflow-auto scrollbar-thin">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableRow className="hover:bg-muted/35">
                   <TableHead className="min-w-[180px]">Collector</TableHead>
                   <TableHead className="hidden md:table-cell">Phone</TableHead>
                   <TableHead>Zone</TableHead>
@@ -318,14 +320,14 @@ function CollectorsPage() {
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => openDetail(c)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary-dark">
+                          <Avatar className="h-9 w-9 ring-2 ring-primary/10">
+                            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary-dark">
                               {initials(c.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <div className="text-sm font-medium text-foreground truncate">{c.name}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{c.id}</div>
+                            <div className="truncate text-sm font-semibold text-foreground">{c.name}</div>
+                            <div className="max-w-36 truncate font-mono text-[11px] text-muted-foreground">{c.id}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -425,27 +427,27 @@ function RowActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={`Open actions for ${collector.name}`}><MoreHorizontal className="h-4 w-4" /></Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onEdit}>Edit collector</DropdownMenuItem>
+        <DropdownMenuItem onClick={onEdit}><Pencil className="h-4 w-4 text-muted-foreground" /> Edit collector</DropdownMenuItem>
         <DropdownMenuSeparator />
         {collector.status !== "active" && (
-          <DropdownMenuItem onClick={() => onStatus("active")}>Activate</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onStatus("active")}><CheckCircle2 className="h-4 w-4 text-success" /> Activate</DropdownMenuItem>
         )}
         {collector.status !== "pending" && (
-          <DropdownMenuItem onClick={() => onStatus("pending")}>Restore to Pending Registration</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onStatus("pending")}><RotateCcw className="h-4 w-4 text-muted-foreground" /> Restore to Pending Registration</DropdownMenuItem>
         )}
         {collector.status !== "inactive" && (
-          <DropdownMenuItem onClick={() => onStatus("inactive")}>Deactivate</DropdownMenuItem>
+          <DropdownMenuItem className="text-warning" onClick={() => onStatus("inactive")}><Ban className="h-4 w-4" /> Deactivate</DropdownMenuItem>
         )}
         {collector.status !== "suspended" && (
           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onStatus("suspended")}>
-            Suspend
+            <Ban className="h-4 w-4" /> Suspend
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>Delete permanently</DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /> Delete permanently</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -460,12 +462,12 @@ function Metric({
     tone === "muted" ? "text-muted-foreground" :
     "text-primary";
   return (
-    <div className="rounded-md border border-border bg-card p-4">
+    <div className="interactive-card group p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className={toneStyle}>{icon}</span>
+        <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneStyle}`}>{icon}</span>
       </div>
-      <div className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
@@ -569,16 +571,16 @@ function CollectorFormSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 pb-6">
+        <div className="space-y-7 px-5 py-5 sm:px-6">
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Identity</h3>
+            <h3 className="section-label">Identity</h3>
             <Field label="Full name" error={errors.name} required>
               <Input value={values.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Ravi Kumar" />
             </Field>
             <Field label="Phone number" error={errors.phone} hint="Include country code, e.g. +919845012034." required>
               <Input value={values.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" inputMode="tel" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Zone" error={errors.zone} required>
                 <Select value={values.zone} onValueChange={(v) => set("zone", v as Zone)}>
                   <SelectTrigger><SelectValue placeholder="Select zone" /></SelectTrigger>
@@ -599,7 +601,7 @@ function CollectorFormSheet({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Optional details</h3>
+            <h3 className="section-label">Optional details</h3>
             <Field label="Collector type">
               <Select value={values.collectorType} onValueChange={(v) => set("collectorType", v as CollectorType)}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
@@ -625,7 +627,7 @@ function CollectorFormSheet({
           </section>
         </div>
 
-        <SheetFooter className="sticky bottom-0 -mx-6 border-t border-border bg-background px-6 py-4">
+        <SheetFooter className="sticky bottom-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit}>{isEditing ? "Save changes" : "Add collector"}</Button>
         </SheetFooter>
@@ -696,8 +698,8 @@ function CollectorDetailDrawer({
           </div>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 pb-6">
-          <section className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-border bg-card p-4">
+        <div className="space-y-6 px-5 py-5 sm:px-6">
+          <section className="surface-card grid gap-x-4 gap-y-3 p-4 sm:grid-cols-2">
             <Detail icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={collector.phone} />
             <Detail icon={<MapPin className="h-3.5 w-3.5" />} label="Zone" value={collector.zone} />
             <Detail label="Collector type" value={collector.collectorType ?? "—"} />
@@ -724,18 +726,18 @@ function CollectorDetailDrawer({
           {collector.internalNotes && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Internal notes</h3>
-              <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">{collector.internalNotes}</p>
+              <p className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-foreground">{collector.internalNotes}</p>
             </section>
           )}
 
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent task history</h3>
             {history.length === 0 ? (
-              <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
                 No task history for this collector yet.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-md border border-border">
+              <div className="overflow-hidden rounded-xl border border-border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -764,7 +766,7 @@ function CollectorDetailDrawer({
           </section>
         </div>
 
-        <SheetFooter className="sticky bottom-0 -mx-6 flex flex-wrap gap-2 border-t border-border bg-background px-6 py-4">
+        <SheetFooter className="sticky bottom-0 flex flex-wrap gap-2">
           <Button variant="outline" onClick={onEdit}>Edit collector</Button>
           {collector.status !== "active" && (
             <Button variant="outline" onClick={() => onStatus("active")}>Activate</Button>
@@ -801,7 +803,7 @@ function Detail({ icon, label, value }: { icon?: React.ReactNode; label: string;
 
 function PerfStat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-md border border-border bg-card p-3">
+    <div className="rounded-xl border border-border/90 bg-card p-3 shadow-sm">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{value}</div>
     </div>

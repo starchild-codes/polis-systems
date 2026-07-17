@@ -10,9 +10,9 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 204 83% 42%;
+    --primary: 206 79% 40%;
     --primary-foreground: 0 0% 100%;
-    --primary-dark: 204 83% 34%;
+    --primary-dark: 206 80% 32%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
@@ -23,11 +23,11 @@
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 204 83% 42%;
+    --ring: 206 79% 40%;
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
-    --sidebar: 207 56% 18%;
+    --sidebar: 208 55% 17%;
     --sidebar-foreground: 210 40% 90%;
     --sidebar-accent: 207 52% 23%;
     --sidebar-border: 207 45% 25%;
@@ -40,12 +40,16 @@
     --navy-900: 222 47% 11%;
     --navy-950: 222 50% 7%;
     --sidebar-width: 16rem;
-    --sidebar-width-icon: 3rem;
+    --sidebar-width-icon: 4.25rem;
   }
 }
 
 * {
   border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -54,6 +58,56 @@ body {
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-width: 320px;
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.18);
+}
+
+@layer components {
+  .page-shell {
+    @apply space-y-5 p-4 sm:p-5 lg:p-6;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-border/90 bg-card shadow-surface;
+  }
+
+  .interactive-card {
+    @apply surface-card transition-[transform,box-shadow,border-color] duration-200 motion-reduce:transition-none;
+  }
+
+  .interactive-card:hover {
+    @apply -translate-y-0.5 border-primary/20 shadow-surface-hover motion-reduce:translate-y-0;
+  }
+
+  .icon-tile {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/10;
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .scrollbar-thin::-webkit-scrollbar {

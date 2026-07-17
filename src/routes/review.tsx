@@ -247,9 +247,9 @@ function ReviewPage() {
         ) : undefined}
       />
 
-      <div className="space-y-4 p-5">
+      <div className="page-shell animate-fade-up">
         {/* Summary metrics */}
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section aria-label="Review metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Awaiting Review" value={counts.pending} icon={<Clock3 className="h-4 w-4" />} tone="warning" />
           <MetricCard label="Approved" value={counts.approved} icon={<CheckCircle2 className="h-4 w-4" />} tone="success" />
           <MetricCard label="Rejected" value={counts.rejected} icon={<XCircle className="h-4 w-4" />} tone="destructive" />
@@ -267,14 +267,14 @@ function ReviewPage() {
         </Tabs>
 
         {/* Search + filters */}
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-3">
+        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
           <div className="relative min-w-[220px] flex-1">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search task, collector, zone, or waste type"
-              className="h-9 pl-8"
+              className="pl-8"
             />
           </div>
           <Select value={zoneFilter} onValueChange={setZoneFilter}>
@@ -295,7 +295,7 @@ function ReviewPage() {
 
         {/* Submission queue */}
         {loading ? (
-          <div className="space-y-3 rounded-md border border-border bg-card p-4">
+          <div className="surface-card space-y-3 p-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4">
                 <div className="flex-1 space-y-2">
@@ -308,7 +308,7 @@ function ReviewPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface">
             <AlertCircle className="h-6 w-6 text-destructive" />
             <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load submissions</h3>
             <p className="mt-1 max-w-md text-sm text-muted-foreground">{error}</p>
@@ -322,10 +322,10 @@ function ReviewPage() {
             action={emptyState.showClear ? <Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button> : undefined}
           />
         ) : (
-          <div className="overflow-auto rounded-md border border-border bg-card">
+          <div className="surface-card overflow-auto scrollbar-thin">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableRow className="hover:bg-muted/35">
                   <TableHead className="min-w-[200px]">Task</TableHead>
                   <TableHead>Collector</TableHead>
                   <TableHead>Zone</TableHead>
@@ -343,10 +343,10 @@ function ReviewPage() {
                     onClick={() => openSubmission(s.id)}
                   >
                     <TableCell>
-                      <div className="text-sm font-medium text-foreground">
-                        {s.task?.title ?? "Unknown task"} {isTestSubmission(s) && <Badge variant="muted" className="ml-1">Test</Badge>}
+                      <div className="flex min-w-[12rem] items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className="truncate">{s.task?.title ?? "Unknown task"}</span> {isTestSubmission(s) && <Badge variant="muted"><FlaskConical className="h-3 w-3" /> Test</Badge>}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="mt-0.5 max-w-[16rem] truncate text-xs text-muted-foreground">
                         {s.task?.address ?? "—"}
                       </div>
                     </TableCell>
@@ -455,7 +455,7 @@ function TestSubmissionSheet({
           </SheetDescription>
         </SheetHeader>
         <SheetBody className="space-y-5">
-          <div className="rounded-md border border-info/30 bg-info/5 p-3 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-info/30 bg-info/5 p-4 text-sm leading-6 text-muted-foreground">
             The selected task will move to Submitted while this test exists. Cleanup restores its previous status.
           </div>
           <div className="space-y-1.5">
@@ -544,7 +544,7 @@ function SubmissionDetailDrawer({
           </SheetDescription>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <ReviewStatusBadge status={submission.reviewStatus} />
-            {isTest && <Badge variant="info">Admin test data</Badge>}
+            {isTest && <Badge variant="info"><FlaskConical className="h-3 w-3" /> Admin test data</Badge>}
             {task && <Badge variant="muted">{task.priority} priority</Badge>}
             {task && <Badge variant="muted">{task.hotspotType}</Badge>}
           </div>
@@ -555,7 +555,7 @@ function SubmissionDetailDrawer({
           {task && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Task Details</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-border bg-card p-4">
+              <div className="surface-card grid gap-x-4 gap-y-3 p-4 sm:grid-cols-2">
                 <DetailRow icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={task.address ?? "—"} />
                 <DetailRow label="Zone" value={task.zoneName} />
                 <DetailRow label="Hotspot type" value={task.hotspotType} />
@@ -573,7 +573,7 @@ function SubmissionDetailDrawer({
           {collector && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Collector</h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-md border border-border bg-card p-4">
+              <div className="surface-card grid gap-x-4 gap-y-3 p-4 sm:grid-cols-2">
                 <DetailRow icon={<User className="h-3.5 w-3.5" />} label="Name" value={collector.name} />
                 <DetailRow icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={collector.phone} />
                 <DetailRow label="Zone" value={collector.zoneName} />
@@ -584,7 +584,7 @@ function SubmissionDetailDrawer({
           {/* Submission evidence */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Submission Evidence</h3>
-            <div className="space-y-3 rounded-md border border-border bg-card p-4">
+            <div className="surface-card space-y-3 p-4">
               <DetailRow icon={<Weight className="h-3.5 w-3.5" />} label="Waste type" value={submission.wasteType ?? "—"} />
               <DetailRow label="Quantity estimate" value={submission.quantityEstimate ?? "—"} />
               {submission.submittedLatitude != null && submission.submittedLongitude != null && (
@@ -594,14 +594,10 @@ function SubmissionDetailDrawer({
                   value={`${submission.submittedLatitude.toFixed(5)}, ${submission.submittedLongitude.toFixed(5)}`}
                 />
               )}
-              {submission.beforePhotoPath && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <ImageIcon className="h-3.5 w-3.5" /> Before photo: <span className="font-mono text-xs">{submission.beforePhotoPath}</span>
-                </div>
-              )}
-              {submission.afterPhotoPath && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <ImageIcon className="h-3.5 w-3.5" /> After photo: <span className="font-mono text-xs">{submission.afterPhotoPath}</span>
+              {(submission.beforePhotoPath || submission.afterPhotoPath) && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {submission.beforePhotoPath && <EvidenceFile label="Before photo" path={submission.beforePhotoPath} />}
+                  {submission.afterPhotoPath && <EvidenceFile label="After photo" path={submission.afterPhotoPath} />}
                 </div>
               )}
               {submission.collectorNotes && (
@@ -619,7 +615,7 @@ function SubmissionDetailDrawer({
           {submission.reviewStatus === "rejected" && submission.rejectionReason && (
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rejection Reason</h3>
-              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
                 <p className="text-sm text-foreground">{submission.rejectionReason}</p>
                 {submission.reviewedAt && (
                   <p className="mt-2 text-xs text-muted-foreground">Rejected on {formatDateTime(submission.reviewedAt)}</p>
@@ -713,6 +709,15 @@ function DetailRow({
   );
 }
 
+function EvidenceFile({ label, path }: { label: string; path: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-3">
+      <div className="flex items-center gap-2 text-xs font-semibold text-foreground"><ImageIcon className="h-4 w-4 text-primary" />{label}</div>
+      <p className="mt-2 break-all font-mono text-[11px] leading-4 text-muted-foreground">{path}</p>
+    </div>
+  );
+}
+
 function MetricCard({
   label, value, icon, tone = "default",
 }: {
@@ -728,12 +733,12 @@ function MetricCard({
     destructive: "text-destructive",
   }[tone];
   return (
-    <div className="rounded-md border border-border bg-card p-3.5">
+    <div className="interactive-card group p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
-        <span className={toneClass}>{icon}</span>
+        <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneClass}`}>{icon}</span>
       </div>
-      <div className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{value}</div>
     </div>
   );
 }

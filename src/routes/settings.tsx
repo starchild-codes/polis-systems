@@ -24,7 +24,7 @@ function SettingsPage() {
         description="Organisation, zones, and notification preferences"
       />
 
-      <div className="max-w-3xl space-y-6 p-6">
+      <div className="page-shell max-w-4xl animate-fade-up">
         <Section title="Organisation" description="Displayed on reports and collector messages.">
           <Field label="Organisation name">
             <Input defaultValue="Bengaluru Municipal Sanitation" />
@@ -56,7 +56,7 @@ function SettingsPage() {
           <ToggleRow label="Weekly digest" description="Every Monday morning summary." />
         </Section>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
           <Button variant="outline">Cancel</Button>
           <Button onClick={() => toast.success("Settings saved")}>Save changes</Button>
         </div>
@@ -75,10 +75,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border bg-card">
-      <div className="border-b border-border px-5 py-3">
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+    <section className="surface-card overflow-hidden">
+      <div className="border-b border-border/80 bg-muted/20 px-5 py-4">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+        {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
       <div className="space-y-4 p-5">{children}</div>
     </section>

@@ -6,11 +6,11 @@ import { useAuth } from "@/lib/auth";
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-institutional-700 text-white font-bold text-sm">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm shadow-primary/20">
         P
       </div>
       <span className="font-semibold text-navy-950 text-lg tracking-tight">
-        Polis <span className="text-institutional-600">Systems</span>
+        Polis <span className="text-primary">Systems</span>
       </span>
     </Link>
   );
@@ -37,22 +37,22 @@ export function LandingNavbar() {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed inset-x-0 top-0 z-50 transition-all duration-300 motion-reduce:transition-none",
         scrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-navy-100 shadow-sm"
+          ? "border-b border-navy-100 bg-white/95 shadow-sm backdrop-blur-md"
           : "bg-transparent",
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
+      <nav className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-4 md:px-6 lg:px-8">
         <Logo />
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-navy-600 hover:text-navy-950 transition-colors"
+              className="focus-ring rounded-md text-sm font-medium text-navy-600 transition-colors hover:text-navy-950"
             >
               {link.label}
             </a>
@@ -62,19 +62,19 @@ export function LandingNavbar() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
           {isAuthorized && (
-            <Link to="/overview" className="text-sm font-medium text-primary hover:text-primary-dark px-4 py-2 transition-colors">
+            <Link to="/overview" className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary-dark">
               Open dashboard
             </Link>
           )}
           <Link
             to="/login"
-            className="text-sm font-medium text-navy-700 hover:text-navy-950 px-4 py-2 transition-colors"
+            className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-navy-50 hover:text-navy-950"
           >
             Log In
           </Link>
           <Link
             to="/signup"
-            className="text-sm font-medium text-white bg-institutional-700 hover:bg-institutional-800 px-4 py-2 rounded-lg transition-colors"
+            className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark"
           >
             Sign Up
           </Link>
@@ -83,7 +83,7 @@ export function LandingNavbar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-navy-700"
+          className="focus-ring rounded-lg p-2 text-navy-700 transition-colors hover:bg-navy-50 md:hidden"
           aria-label="Toggle menu"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -98,18 +98,18 @@ export function LandingNavbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-b border-navy-100 px-4 py-4 space-y-3">
+        <div className="space-y-2 border-b border-navy-100 bg-white px-4 py-4 shadow-surface animate-fade-in md:hidden">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className="block text-sm font-medium text-navy-600 hover:text-navy-950"
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium text-navy-600 transition-colors hover:bg-navy-50 hover:text-navy-950"
             >
               {link.label}
             </a>
           ))}
-          <div className="pt-3 border-t border-navy-100 flex flex-col gap-2">
+          <div className="flex flex-col gap-2 border-t border-navy-100 pt-3">
             {isAuthorized && (
               <Link to="/overview" className="text-sm font-medium text-primary py-2" onClick={() => setMobileOpen(false)}>
                 Open dashboard
@@ -125,7 +125,7 @@ export function LandingNavbar() {
             <Link
               to="/signup"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-white bg-institutional-700 px-4 py-2.5 rounded-lg text-center"
+              className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm"
             >
               Sign Up
             </Link>

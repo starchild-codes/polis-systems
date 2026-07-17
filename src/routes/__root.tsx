@@ -37,6 +37,7 @@ function ProtectedShell({ children }: { children: ReactNode }) {
   const { loading, session, profileLoading, profileError, isAuthorized, signOut, user } = useAuth();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -48,7 +49,10 @@ function ProtectedShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const btn = document.getElementById("sidebar-toggle");
     if (!btn) return;
-    const handler = () => setSidebarCollapsed((c) => !c);
+    const handler = () => {
+      if (window.matchMedia("(min-width: 768px)").matches) setSidebarCollapsed((c) => !c);
+      else setMobileSidebarOpen((open) => !open);
+    };
     btn.addEventListener("click", handler);
     return () => btn.removeEventListener("click", handler);
   }, []);
@@ -56,7 +60,10 @@ function ProtectedShell({ children }: { children: ReactNode }) {
   // Escape key closes sidebar
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSidebarCollapsed(true);
+      if (e.key === "Escape") {
+        setSidebarCollapsed(true);
+        setMobileSidebarOpen(false);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -84,12 +91,20 @@ function ProtectedShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <div className="hidden md:block">
+      <div className="sticky top-0 hidden h-screen md:block">
         <AppSidebar collapsed={sidebarCollapsed} />
       </div>
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button aria-label="Close navigation" className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in" onClick={() => setMobileSidebarOpen(false)} />
+          <div className="relative h-full w-[min(18rem,86vw)] animate-slide-in-left">
+            <AppSidebar collapsed={false} onNavigate={() => setMobileSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
-        <main className="flex-1 bg-muted/50">{children}</main>
+        <main className="flex-1 bg-[linear-gradient(180deg,hsl(var(--muted)/0.55),hsl(var(--background))_28rem)]">{children}</main>
       </div>
     </div>
   );

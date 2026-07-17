@@ -26,7 +26,7 @@ import { useCollectorStore } from "@/lib/collector-store";
 import { useZones } from "@/lib/zone-store";
 import { CreateTaskSheet } from "@/components/tasks/create-task-sheet";
 import { TaskDetailDrawer } from "@/components/tasks/task-detail-drawer";
-import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2 } from "lucide-react";
+import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -224,9 +224,9 @@ function TasksPage() {
         }
       />
 
-      <div className="space-y-4 p-5">
+      <div className="page-shell animate-fade-up">
         {/* Summary strip */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" aria-label="Task status summary">
           {SUMMARY_CHIPS.map((chip) => {
             const count = tasks.filter((t) => chip.match(t, isTaskOverdue(t))).length;
             const active = activeChip === chip.key;
@@ -234,29 +234,29 @@ function TasksPage() {
               <button
                 key={chip.key}
                 onClick={() => setActiveChip(active ? "all" : chip.key)}
-                className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`focus-ring flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow] ${
                   active
-                    ? "border-primary bg-primary/10 text-primary-dark"
+                    ? "border-primary/30 bg-primary/10 text-primary-dark shadow-primary/5"
                     : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
                 }`}
               >
                 {chip.key === "overdue" && <AlertTriangle className="h-3 w-3" />}
                 {chip.label}
-                <span className="tabular-nums text-foreground">{count}</span>
+                <span className={`inline-flex min-w-5 justify-center rounded-full px-1.5 py-0.5 tabular-nums ${active ? "bg-primary/10 text-primary-dark" : "bg-muted text-foreground"}`}>{count}</span>
               </button>
             );
           })}
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-3">
+        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
           <div className="relative min-w-0 flex-1 basis-56">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by title, location, or collector"
-              className="h-9 pl-8"
+              className="pl-8"
             />
           </div>
           <Select className="!w-[9.5rem]" value={status} onValueChange={(v) => setStatus(v as TaskStatus | "all")}>
@@ -319,7 +319,7 @@ function TasksPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="space-y-3 rounded-md border border-border bg-card p-4">
+          <div className="surface-card space-y-3 p-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4">
                 <div className="flex-1 space-y-2">
@@ -333,7 +333,7 @@ function TasksPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-6 py-12 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface">
             <AlertCircle className="h-6 w-6 text-destructive" />
             <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load tasks</h3>
             <p className="mt-1 text-sm text-muted-foreground">{error}</p>
@@ -341,21 +341,23 @@ function TasksPage() {
           </div>
         ) : tasks.length === 0 ? (
           <EmptyState
+            icon={<ClipboardCheck className="h-5 w-5" />}
             title="No tasks yet"
             description="Create your first cleanup task to start assigning field work."
             action={<Button size="sm" onClick={() => { setEditingTask(null); setCreateOpen(true); }}>Create Task</Button>}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
+            icon={<ListFilter className="h-5 w-5" />}
             title="No tasks match your filters"
             description="Try adjusting or clearing your filters to see more tasks."
             action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>}
           />
         ) : (
-          <div className="overflow-auto rounded-md border border-border bg-card">
+          <div className="surface-card overflow-auto scrollbar-thin">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableRow className="hover:bg-muted/35">
                   <TableHead className="min-w-[200px]">Task</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
@@ -373,14 +375,14 @@ function TasksPage() {
                   return (
                     <TableRow key={t.id} className="cursor-pointer" onClick={() => openDrawer(t)}>
                       <TableCell>
-                        <div className="text-sm font-medium text-foreground">{t.title}</div>
-                        <div className="text-xs text-muted-foreground">{t.location}</div>
+                        <div className="max-w-[16rem] truncate text-sm font-semibold text-foreground">{t.title}</div>
+                        <div className="mt-0.5 max-w-[16rem] truncate text-xs text-muted-foreground">{t.location}</div>
                       </TableCell>
                       <TableCell><StatusBadge status={t.status} /></TableCell>
                       <TableCell><PriorityLabel priority={t.priority} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{t.hotspotType}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {t.assignee ?? <span className="italic">Unassigned</span>}
+                        {t.assignee ?? <span className="italic text-muted-foreground/75">Unassigned</span>}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{t.zone}</TableCell>
                       <TableCell className={overdue ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
@@ -393,7 +395,7 @@ function TasksPage() {
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Open actions for ${t.title}`}><MoreHorizontal className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={`Open actions for ${t.title}`}><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-52">
                             <DropdownMenuItem onClick={() => openDrawer(t)}><Eye className="h-4 w-4 text-muted-foreground" /> View details</DropdownMenuItem>

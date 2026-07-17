@@ -168,16 +168,16 @@ export function CreateTaskSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 px-6 pb-6">
+        <div className="space-y-7 px-5 py-5 sm:px-6">
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Task details</h3>
+            <h3 className="section-label">Task details</h3>
             <Field label="Title" error={errors.title} required>
               <Input value={values.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Plastic dump near lake" />
             </Field>
             <Field label="Description" error={errors.description} required>
               <Textarea value={values.description} onChange={(e) => set("description", e.target.value)} placeholder="What needs to be cleaned up?" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Hotspot type" error={errors.hotspotType} required>
                 <Select value={values.hotspotType} onValueChange={(v) => set("hotspotType", v as HotspotType)}>
                   <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
@@ -195,7 +195,7 @@ export function CreateTaskSheet({
                 </Select>
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Waste type">
                 <Select value={values.wasteType} onValueChange={(v) => set("wasteType", v as WasteType)}>
                   <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
@@ -211,7 +211,7 @@ export function CreateTaskSheet({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assignment &amp; timing</h3>
+            <h3 className="section-label">Assignment &amp; timing</h3>
             <Field label="Assigned collector" hint="Leave blank to save as a draft — you can assign later.">
               <Select value={values.assignee || "__none"} onValueChange={(v) => set("assignee", v === "__none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="No collector (draft)" /></SelectTrigger>
@@ -223,7 +223,7 @@ export function CreateTaskSheet({
                 </SelectContent>
               </Select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Due date" error={errors.dueAt} required>
                 <Input type="date" value={values.dueAt} onChange={(e) => set("dueAt", e.target.value)} />
               </Field>
@@ -239,11 +239,11 @@ export function CreateTaskSheet({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</h3>
+            <h3 className="section-label">Location</h3>
             <Field label="Address" error={errors.location} required>
               <Input value={values.location} onChange={(e) => set("location", e.target.value)} placeholder="e.g. MG Road, Ward 12" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Latitude" error={errors.latitude} required>
                 <Input value={values.latitude} onChange={(e) => set("latitude", e.target.value)} placeholder="12.9756" />
               </Field>
@@ -254,7 +254,7 @@ export function CreateTaskSheet({
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Optional details</h3>
+            <h3 className="section-label">Optional details</h3>
             <Field label="Instructions">
               <Textarea value={values.instructions} onChange={(e) => set("instructions", e.target.value)} placeholder="Any special handling notes for the collector" />
             </Field>
@@ -268,7 +268,7 @@ export function CreateTaskSheet({
           </section>
         </div>
 
-        <SheetFooter className="sticky bottom-0 border-t border-border bg-background px-6 py-4">
+        <SheetFooter className="sticky bottom-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>{isEditing ? "Save changes" : "Create task"}</Button>
         </SheetFooter>

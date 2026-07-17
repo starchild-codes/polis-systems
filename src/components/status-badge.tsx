@@ -16,7 +16,7 @@ const variantMap: Record<ReviewStatus, "warning" | "success" | "destructive"> = 
 };
 
 export function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
-  return <Badge variant={variantMap[status]}>{labelMap[status]}</Badge>;
+  return <Badge variant={variantMap[status]}><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />{labelMap[status]}</Badge>;
 }
 
 const taskStatusLabel: Record<TaskStatus, string> = {
@@ -44,7 +44,7 @@ const taskStatusVariant: Record<TaskStatus, "default" | "warning" | "success" | 
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
-  return <Badge variant={taskStatusVariant[status]}>{taskStatusLabel[status]}</Badge>;
+  return <Badge variant={taskStatusVariant[status]}><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />{taskStatusLabel[status]}</Badge>;
 }
 
 const priorityLabel: Record<Priority, string> = {
@@ -62,7 +62,7 @@ const priorityVariant: Record<Priority, "default" | "secondary" | "destructive" 
 };
 
 export function PriorityLabel({ priority }: { priority: Priority }) {
-  return <Badge variant={priorityVariant[priority]}>{priorityLabel[priority]}</Badge>;
+  return <Badge variant={priorityVariant[priority]}><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />{priorityLabel[priority]}</Badge>;
 }
 
 export const statusBarColor: Record<TaskStatus, string> = {
