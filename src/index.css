@@ -189,29 +189,60 @@ body {
   vector-effect: non-scaling-stroke;
 }
 
+.brand-reveal__label,
+.brand-reveal__micro-label {
+  fill: currentColor;
+  stroke: none;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.brand-reveal__label {
+  font-size: 7px;
+}
+
+.brand-reveal__micro-label {
+  font-size: 6px;
+}
+
+.brand-reveal__accent {
+  fill: hsl(197 95% 72%);
+  stroke: none;
+}
+
+.brand-reveal__status-verified {
+  fill: hsl(197 95% 72% / 0.12);
+  stroke: hsl(197 95% 76%);
+}
+
 .brand-reveal__piece {
   --entry-x: 0px;
   --entry-y: 12px;
+  --piece-opacity: 0.2;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
   animation: brand-piece-snap 0.72s cubic-bezier(0.2, 0.82, 0.28, 1.12) forwards;
 }
 
-.brand-reveal__piece--route { --entry-x: -22px; --entry-y: 12px; animation-delay: 0.06s; }
-.brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -18px; animation-delay: 0.1s; }
-.brand-reveal__piece--task-left { --entry-x: -18px; --entry-y: 10px; animation-delay: 0.14s; }
+.brand-reveal__piece--route { --entry-x: -22px; --entry-y: 12px; animation-delay: 0.05s; }
+.brand-reveal__piece--dashboard { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.09s; }
+.brand-reveal__piece--task-left { --entry-x: -18px; --entry-y: 10px; --piece-opacity: 0.24; animation-delay: 0.15s; }
 .brand-reveal__piece--audit { --entry-x: -16px; --entry-y: 0px; animation-delay: 0.2s; }
 .brand-reveal__piece--check { --entry-x: -10px; --entry-y: 12px; animation-delay: 0.24s; }
-.brand-reveal__piece--task-right { --entry-x: 18px; --entry-y: -8px; animation-delay: 0.28s; }
-.brand-reveal__piece--workflow { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.32s; }
+.brand-reveal__piece--collector { --entry-x: -18px; --entry-y: 14px; --piece-opacity: 0.24; animation-delay: 0.29s; }
+.brand-reveal__piece--workflow { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.33s; }
 .brand-reveal__piece--pin { --entry-x: 14px; --entry-y: 12px; animation-delay: 0.36s; }
-.brand-reveal__piece--assignment { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.4s; }
-.brand-reveal__piece--message { --entry-x: 16px; --entry-y: 8px; animation-delay: 0.44s; }
-.brand-reveal__piece--report { --entry-x: 16px; --entry-y: 14px; animation-delay: 0.48s; }
-.brand-reveal__piece--status { --entry-x: 16px; --entry-y: 0px; animation-delay: 0.5s; }
-.brand-reveal__piece--movement { --entry-x: -12px; --entry-y: 12px; animation-delay: 0.52s; }
-.brand-reveal__piece--dots { --entry-x: 0px; --entry-y: 10px; animation-delay: 0.56s; }
+.brand-reveal__piece--task-right { --entry-x: 18px; --entry-y: -8px; --piece-opacity: 0.24; animation-delay: 0.4s; }
+.brand-reveal__piece--assignment { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.43s; }
+.brand-reveal__piece--message { --entry-x: 16px; --entry-y: 8px; animation-delay: 0.46s; }
+.brand-reveal__piece--report { --entry-x: 16px; --entry-y: 14px; animation-delay: 0.49s; }
+.brand-reveal__piece--status { --entry-x: 16px; --entry-y: 0px; --piece-opacity: 0.26; animation-delay: 0.52s; }
+.brand-reveal__piece--metrics { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.55s; }
+.brand-reveal__piece--movement { --entry-x: -12px; --entry-y: 12px; animation-delay: 0.58s; }
+.brand-reveal__piece--dots { --entry-x: 0px; --entry-y: 10px; animation-delay: 0.61s; }
+.brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -18px; --piece-opacity: 0.24; animation-delay: 0.64s; }
 
 .brand-reveal__draw {
   stroke-dasharray: 240;
@@ -232,11 +263,27 @@ body {
 }
 
 .brand-reveal__pulse {
-  fill: currentColor;
+  fill: hsl(197 95% 72%);
   opacity: 0.35;
   transform-box: fill-box;
   transform-origin: center;
   animation: brand-pulse-once 0.65s ease-out 0.72s both;
+}
+
+.brand-reveal__status-old {
+  animation: brand-status-out 0.28s ease-in 1.08s forwards;
+}
+
+.brand-reveal__status-new {
+  opacity: 0;
+  animation: brand-status-in 0.34s ease-out 1.16s forwards;
+}
+
+.brand-reveal__verified-chip {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-chip-lock 0.4s cubic-bezier(0.22, 1, 0.36, 1) 1.28s forwards;
 }
 
 .brand-reveal__identity {
@@ -249,17 +296,6 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-}
-
-.brand-reveal__logo {
-  height: clamp(4.75rem, 7vw, 6.25rem);
-  width: clamp(4.75rem, 7vw, 6.25rem);
-  margin-bottom: 1.25rem;
-  border: 3px solid hsl(0 0% 100% / 0.88);
-  box-shadow: 0 18px 42px hsl(207 65% 20% / 0.26);
-  opacity: 0;
-  transform: translateY(10px) scale(0.86) rotate(-3deg);
-  animation: brand-logo-snap 0.55s cubic-bezier(0.2, 0.84, 0.3, 1.16) 1.45s forwards;
 }
 
 .brand-reveal__wordmark {
@@ -302,7 +338,7 @@ body {
 
 .brand-reveal--complete .brand-reveal__piece {
   animation: none;
-  opacity: 0.2;
+  opacity: var(--piece-opacity);
   transform: none;
 }
 
@@ -310,7 +346,6 @@ body {
 .brand-reveal--complete .brand-reveal__connector,
 .brand-reveal--complete .brand-reveal__trace,
 .brand-reveal--complete .brand-reveal__pulse,
-.brand-reveal--complete .brand-reveal__logo,
 .brand-reveal--complete .brand-reveal__wordmark,
 .brand-reveal--complete .brand-reveal__letter,
 .brand-reveal--complete .brand-reveal__tagline {
@@ -320,10 +355,22 @@ body {
   transform: none;
 }
 
+.brand-reveal--complete .brand-reveal__status-old {
+  animation: none;
+  opacity: 0;
+}
+
+.brand-reveal--complete .brand-reveal__status-new,
+.brand-reveal--complete .brand-reveal__verified-chip {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
 @keyframes brand-piece-snap {
   0% { opacity: 0; transform: translate(var(--entry-x), var(--entry-y)) scale(0.88); }
   72% { opacity: 0.42; transform: translate(-1px, -1px) scale(1.025); }
-  100% { opacity: 0.2; transform: none; }
+  100% { opacity: var(--piece-opacity); transform: none; }
 }
 
 @keyframes brand-line-draw {
@@ -332,12 +379,6 @@ body {
 
 @keyframes brand-identity-in {
   to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes brand-logo-snap {
-  0% { opacity: 0; transform: translateY(10px) scale(0.86) rotate(-3deg); }
-  72% { opacity: 1; transform: translateY(-2px) scale(1.025) rotate(0.5deg); }
-  100% { opacity: 1; transform: none; }
 }
 
 @keyframes brand-letter-snap {
@@ -357,13 +398,33 @@ body {
   100% { opacity: 0.55; transform: scale(1); }
 }
 
+@keyframes brand-status-out {
+  to { opacity: 0; transform: translateY(-2px); }
+}
+
+@keyframes brand-status-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes brand-chip-lock {
+  0% { opacity: 0; transform: translateX(7px) scale(0.96); }
+  72% { opacity: 1; transform: translateX(-1px) scale(1.015); }
+  100% { opacity: 1; transform: none; }
+}
+
 @media (max-width: 767px) {
   .brand-reveal {
     min-height: clamp(22rem, 64vh, 34rem);
   }
 
   .brand-reveal__piece--route,
+  .brand-reveal__piece--dashboard,
+  .brand-reveal__piece--audit,
   .brand-reveal__piece--task-right,
+  .brand-reveal__piece--workflow,
+  .brand-reveal__piece--report,
+  .brand-reveal__piece--metrics,
   .brand-reveal__piece--dots {
     display: none;
   }
@@ -372,12 +433,6 @@ body {
     --brand-tracking: 0.035em;
     --brand-tracking-start: 0.055em;
     font-size: clamp(1.75rem, 8.8vw, 3rem);
-  }
-
-  .brand-reveal__logo {
-    height: 4.25rem;
-    width: 4.25rem;
-    margin-bottom: 0.9rem;
   }
 
   .brand-reveal__tagline {
@@ -402,7 +457,7 @@ body {
 
   .brand-reveal__piece {
     animation: none !important;
-    opacity: 0.2 !important;
+    opacity: var(--piece-opacity) !important;
     transform: none !important;
   }
 
@@ -414,10 +469,21 @@ body {
   }
 
   .brand-reveal__pulse,
-  .brand-reveal__logo,
   .brand-reveal__wordmark,
   .brand-reveal__letter,
   .brand-reveal__tagline {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .brand-reveal__status-old {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .brand-reveal__status-new,
+  .brand-reveal__verified-chip {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
