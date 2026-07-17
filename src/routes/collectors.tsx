@@ -33,8 +33,9 @@ import {
 } from "@/lib/mock-data";
 import { useCollectorStore, useCollectorStoreState, collectorStoreActions, type NewCollectorInput } from "@/lib/collector-store";
 import { useTaskStore } from "@/lib/task-store";
-import { useZones } from "@/lib/zone-store";
+import { useZones, zoneStoreActions } from "@/lib/zone-store";
 import { useSubmissionStore } from "@/lib/submission-store";
+import { useAuth } from "@/lib/auth";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlert as AlertCircle } from "lucide-react";
@@ -84,6 +85,7 @@ function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
 function CollectorsPage() {
   const collectors = useCollectorStore();
   const { loading, error } = useCollectorStoreState();
+  const { organizationRole } = useAuth();
   const zones = useZones();
   const zoneNames = zones.length > 0 ? zones.map((z) => z.name) : Array.from(new Set(collectors.map((c) => c.zone)));
   const { tasks } = useTaskStore();
@@ -152,6 +154,10 @@ function CollectorsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleCreateZone(name: string) {
+    return zoneStoreActions.createZone(name);
   }
 
   async function handleStatusChange(id: string, next: CollectorStatus, name: string) {
@@ -366,6 +372,8 @@ function CollectorsPage() {
         editing={editing}
         collectors={collectors}
         zoneNames={zoneNames}
+        canManageZones={organizationRole === "admin"}
+        onCreateZone={handleCreateZone}
         onCreate={handleCreate}
         onEdit={handleEdit}
       />
@@ -493,19 +501,23 @@ const emptyForm: FormValues = {
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 function CollectorFormSheet({
-  open, onOpenChange, editing, collectors, zoneNames, onCreate, onEdit,
+  open, onOpenChange, editing, collectors, zoneNames, canManageZones, onCreateZone, onCreate, onEdit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Collector | null;
   collectors: Collector[];
   zoneNames: string[];
+  canManageZones: boolean;
+  onCreateZone: (name: string) => Promise<{ name: string }>;
   onCreate: (input: NewCollectorInput) => void;
   onEdit: (id: string, patch: Partial<NewCollectorInput>) => void;
 }) {
   const isEditing = !!editing;
   const [values, setValues] = useState<FormValues>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [newZoneName, setNewZoneName] = useState("");
+  const [addingZone, setAddingZone] = useState(false);
 
   // Reset form when the sheet opens or the editing target changes.
   useEffect(() => {
@@ -521,6 +533,7 @@ function CollectorFormSheet({
         internalNotes: editing.internalNotes ?? "",
       } : emptyForm);
       setErrors({});
+      setNewZoneName("");
     }
   }, [open, editing]);
 
@@ -538,6 +551,33 @@ function CollectorFormSheet({
     if (!values.zone) e.zone = "Zone is required.";
     if (!values.status) e.status = "Status is required.";
     return e;
+  }
+
+  async function addZone() {
+    const name = newZoneName.trim();
+    if (!name) {
+      setErrors((prev) => ({ ...prev, zone: "Enter a zone name before adding it." }));
+      return;
+    }
+    if (zoneNames.some((zone) => zone.toLowerCase() === name.toLowerCase())) {
+      set("zone", zoneNames.find((zone) => zone.toLowerCase() === name.toLowerCase()) as Zone);
+      setNewZoneName("");
+      return;
+    }
+
+    setAddingZone(true);
+    try {
+      const zone = await onCreateZone(name);
+      set("zone", zone.name as Zone);
+      setNewZoneName("");
+      toast.success("Zone added", { description: `${zone.name} is now available for collectors and tasks.` });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not add the zone.";
+      setErrors((prev) => ({ ...prev, zone: message }));
+      toast.error("Could not add zone", { description: message });
+    } finally {
+      setAddingZone(false);
+    }
   }
 
   function submit() {
@@ -585,9 +625,41 @@ function CollectorFormSheet({
                 <Select value={values.zone} onValueChange={(v) => set("zone", v as Zone)}>
                   <SelectTrigger><SelectValue placeholder="Select zone" /></SelectTrigger>
                   <SelectContent>
-                    {zoneNames.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                    {zoneNames.length > 0 ? (
+                      zoneNames.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)
+                    ) : (
+                      <p className="px-2 py-2 text-sm text-muted-foreground">No active zones yet.</p>
+                    )}
                   </SelectContent>
                 </Select>
+                {zoneNames.length === 0 && (
+                  <div className="mt-2 rounded-lg border border-dashed border-border bg-muted/35 p-2.5">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {canManageZones
+                        ? "Add the first operational zone for this organization."
+                        : "An organization admin must add a zone before a collector can be registered."}
+                    </p>
+                    {canManageZones && (
+                      <div className="mt-2 flex gap-2">
+                        <Input
+                          value={newZoneName}
+                          onChange={(event) => setNewZoneName(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void addZone();
+                            }
+                          }}
+                          placeholder="e.g. Central"
+                          aria-label="New zone name"
+                        />
+                        <Button type="button" variant="outline" size="sm" onClick={() => void addZone()} disabled={addingZone}>
+                          {addingZone ? "Adding" : <><Plus className="mr-1 h-3.5 w-3.5" />Add</>}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Field>
               <Field label="Status" error={errors.status} required>
                 <Select value={values.status} onValueChange={(v) => set("status", v as CollectorStatus)}>

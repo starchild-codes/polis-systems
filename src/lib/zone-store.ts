@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback } from "react";
-import { fetchZones, type ZoneRow } from "@/lib/supabase-data";
+import { fetchZones, insertZone, type ZoneRow } from "@/lib/supabase-data";
 
 // ─── Store state ────────────────────────────────────────────────────────────
 
@@ -60,6 +60,16 @@ export const zoneStoreActions = {
   async refresh() {
     fetchPromise = null;
     return this.init();
+  },
+
+  async createZone(name: string): Promise<ZoneRow> {
+    const zone = await insertZone(name);
+    state = {
+      ...state,
+      zones: [...state.zones, zone].sort((a, b) => a.name.localeCompare(b.name)),
+    };
+    emit();
+    return zone;
   },
 };
 
