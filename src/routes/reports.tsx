@@ -39,13 +39,7 @@ import {
 import { useTaskStore } from "@/lib/task-store";
 import { useSubmissionStore } from "@/lib/submission-store";
 import { useCollectorStore, useCollectorStoreState } from "@/lib/collector-store";
-import {
-  filterTasks,
-  tasksToCsv,
-  downloadCsv,
-  type ReportFilters,
-  type TaskCsvRow,
-} from "@/lib/csv";
+import { filterTasks, type ReportFilters } from "@/lib/csv";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -94,6 +88,7 @@ function ReportsPage() {
   const { error: collectorsError } = useCollectorStoreState();
 
   const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const filteredTasks = useMemo(
     () => filterTasks(tasks, filters, collectors),
@@ -251,15 +246,21 @@ function ReportsPage() {
     };
   }, [filteredTasks, submissions]);
 
-  // --- CSV Export ---
-  function handleExportCsv() {
-    const rows: TaskCsvRow[] = filteredTasks.map((t) => {
-      const collector = collectors.find((c) => c.name === t.assignee);
-      const submission = submissions.find((s) => s.taskId === t.id);
-      return { task: t, collector, submission };
-    });
-    const csv = tasksToCsv(rows);
-    downloadCsv("polis-systems-tasks.csv", csv);
+  // --- PDF Export ---
+  async function handleExportPdf() {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const { downloadOperationsPdf } = await import("@/lib/report-pdf");
+      downloadOperationsPdf({
+        tasks: filteredTasks,
+        collectors,
+        submissions,
+        filters,
+      });
+    } finally {
+      setExportingPdf(false);
+    }
   }
 
   function resetFilters() {
@@ -284,10 +285,10 @@ function ReportsPage() {
           <Button
             size="sm"
             className="gap-1.5"
-            onClick={handleExportCsv}
-            disabled={filteredTasks.length === 0}
+            onClick={() => { void handleExportPdf(); }}
+            disabled={filteredTasks.length === 0 || exportingPdf}
           >
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className={`h-4 w-4 ${exportingPdf ? "animate-pulse" : ""}`} /> {exportingPdf ? "Preparing PDF..." : "Export PDF"}
           </Button>
         }
       />
@@ -649,7 +650,7 @@ function ReportsPage() {
         </section>
 
         {/* Collector Performance Table */}
-        <section className="surface-card overflow-auto scrollbar-thin">
+        <section className="dashboard-table-shell">
           <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Collector Performance</h2>
@@ -737,11 +738,11 @@ function ReportsPage() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={handleExportCsv}
-            disabled={filteredTasks.length === 0}
+            onClick={() => { void handleExportPdf(); }}
+            disabled={filteredTasks.length === 0 || exportingPdf}
           >
-            <Download className="h-4 w-4" /> Export {filteredTasks.length}{" "}
-            {filteredTasks.length === 1 ? "record" : "records"} as CSV
+            <Download className={`h-4 w-4 ${exportingPdf ? "animate-pulse" : ""}`} /> {exportingPdf ? "Preparing PDF..." : "Export"} {filteredTasks.length}{" "}
+            {filteredTasks.length === 1 ? "record" : "records"} as PDF
           </Button>
         </div>
       </div>
@@ -776,7 +777,7 @@ function Kpi({
         ? "text-warning"
         : "text-muted-foreground";
   return (
-    <div className="interactive-card group p-5">
+            <div className="dashboard-metric group">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}

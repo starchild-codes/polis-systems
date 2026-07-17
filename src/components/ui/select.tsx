@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, createContext, useContext, type ReactNode } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, createContext, useContext, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown } from "lucide-react";
 
@@ -9,6 +10,8 @@ const SelectContext = createContext<{
   setOpen: (o: boolean) => void;
   selectedLabel: string;
   setSelectedLabel: (l: string) => void;
+  triggerRef: React.RefObject<HTMLDivElement>;
+  contentRef: React.RefObject<HTMLDivElement>;
 } | null>(null);
 
 interface SelectProps {
@@ -21,20 +24,29 @@ interface SelectProps {
 export function Select({ value, onValueChange, children, className }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!triggerRef.current?.contains(target) && !contentRef.current?.contains(target)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectedLabel, setSelectedLabel }}>
-      <div ref={ref} className={cn("relative inline-block w-full", className)}>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectedLabel, setSelectedLabel, triggerRef, contentRef }}>
+      <div ref={triggerRef} className={cn("relative inline-block w-full", className)}>
         {children}
       </div>
     </SelectContext.Provider>
@@ -75,14 +87,47 @@ export function SelectValue({ placeholder }: { placeholder?: string }) {
 export function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
   const ctx = useContext(SelectContext);
   if (!ctx) throw new Error("SelectContent must be inside Select");
+  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
+
+  useLayoutEffect(() => {
+    if (!ctx.open) return;
+
+    const updatePosition = () => {
+      const trigger = ctx.triggerRef.current;
+      const content = ctx.contentRef.current;
+      if (!trigger || !content) return;
+      const triggerRect = trigger.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const margin = 8;
+      const offset = 6;
+      const width = Math.min(Math.max(triggerRect.width, 176), window.innerWidth - margin * 2);
+      const spaceBelow = window.innerHeight - triggerRect.bottom - margin;
+      const openAbove = contentRect.height > spaceBelow && triggerRect.top > spaceBelow;
+      const top = openAbove
+        ? Math.max(margin, triggerRect.top - contentRect.height - offset)
+        : Math.min(window.innerHeight - contentRect.height - margin, triggerRect.bottom + offset);
+      const left = Math.min(Math.max(margin, triggerRect.left), window.innerWidth - width - margin);
+      setPosition({ position: "fixed", top, left, width, visibility: "visible" });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [ctx.open, ctx.triggerRef, ctx.contentRef]);
+
   if (!ctx.open) return null;
-  return (
+  return createPortal(
     <div className={cn(
-      "absolute left-0 top-full z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-lg border border-border bg-popover p-1.5 shadow-floating scrollbar-thin animate-scale-in",
+      "z-[100] max-h-[min(15rem,calc(100vh-1rem))] overflow-auto rounded-xl border border-border/90 bg-popover p-1.5 shadow-floating scrollbar-thin animate-pop-in motion-reduce:animate-none",
       className,
-    )} role="listbox">
+    )} ref={ctx.contentRef} style={position} role="listbox">
       {children}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

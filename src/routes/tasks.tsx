@@ -218,8 +218,8 @@ function TasksPage() {
         title="Cleanup Tasks"
         description="Create, assign, and monitor field cleanup operations"
         actions={
-          <Button size="sm" className="gap-1.5" onClick={() => { setEditingTask(null); setCreateOpen(true); }}>
-            <Plus className="h-4 w-4" /> Create Task
+          <Button size="sm" className="dashboard-primary-action gap-1.5" onClick={() => { setEditingTask(null); setCreateOpen(true); }}>
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/15"><Plus className="h-3.5 w-3.5" /></span> Create Task
           </Button>
         }
       />
@@ -249,7 +249,7 @@ function TasksPage() {
         </div>
 
         {/* Filters */}
-        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
+        <div className="dashboard-filter-bar flex flex-wrap items-center gap-2">
           <div className="relative min-w-0 flex-1 basis-56">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -354,7 +354,7 @@ function TasksPage() {
             action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>}
           />
         ) : (
-          <div className="surface-card overflow-auto scrollbar-thin">
+          <div className="dashboard-table-shell">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-muted/35">
@@ -373,7 +373,7 @@ function TasksPage() {
                 {filtered.map((t) => {
                   const overdue = isTaskOverdue(t);
                   return (
-                    <TableRow key={t.id} className="cursor-pointer" onClick={() => openDrawer(t)}>
+                    <TableRow key={t.id} className="dashboard-row" onClick={() => openDrawer(t)}>
                       <TableCell>
                         <div className="max-w-[16rem] truncate text-sm font-semibold text-foreground">{t.title}</div>
                         <div className="mt-0.5 max-w-[16rem] truncate text-xs text-muted-foreground">{t.location}</div>

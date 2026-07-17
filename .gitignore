@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Local Supabase CLI link metadata
+supabase/.temp/

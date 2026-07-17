@@ -5,10 +5,10 @@ type Variant = "default" | "outline" | "ghost" | "destructive" | "secondary";
 type Size = "default" | "sm" | "icon";
 
 const variantClasses: Record<Variant, string> = {
-  default: "bg-primary text-primary-foreground shadow-sm shadow-primary/15 hover:bg-primary-dark",
-  outline: "border border-border bg-background shadow-sm hover:border-primary/25 hover:bg-accent hover:text-accent-foreground",
+  default: "bg-primary text-primary-foreground shadow-[0_4px_12px_hsl(var(--primary)/0.18)] hover:-translate-y-px hover:bg-primary-dark hover:shadow-[0_7px_16px_hsl(var(--primary)/0.22)]",
+  outline: "border border-border bg-background shadow-sm hover:-translate-y-px hover:border-primary/25 hover:bg-accent hover:text-accent-foreground",
   ghost: "hover:bg-accent hover:text-accent-foreground",
-  destructive: "bg-destructive text-destructive-foreground shadow-sm shadow-destructive/15 hover:bg-destructive/90",
+  destructive: "bg-destructive text-destructive-foreground shadow-sm shadow-destructive/15 hover:-translate-y-px hover:bg-destructive/90",
   secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
 };
 

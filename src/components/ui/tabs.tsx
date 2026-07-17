@@ -16,7 +16,7 @@ export function Tabs({ value, onValueChange, children }: { value: string; onValu
 
 export function TabsList({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div role="tablist" className={cn("inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1 scrollbar-thin", className)}>
+    <div role="tablist" className={cn("inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border/90 bg-muted/60 p-1 scrollbar-thin", className)}>
       {children}
     </div>
   );
@@ -33,8 +33,8 @@ export function TabsTrigger({ value, className, children }: { value: string; cla
       aria-selected={active}
       onClick={() => ctx.onValueChange(value)}
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active ? "bg-background text-foreground shadow-sm ring-1 ring-border/60" : "text-muted-foreground hover:bg-background/50 hover:text-foreground",
+        "inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-[color,background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        active ? "bg-primary text-primary-foreground shadow-sm shadow-primary/15" : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
         className,
       )}
     >

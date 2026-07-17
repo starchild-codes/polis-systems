@@ -202,8 +202,8 @@ function CollectorsPage() {
         title="Collectors"
         description="Manage field collectors and monitor operational participation"
         actions={
-          <Button size="sm" className="gap-1.5" onClick={() => { setEditing(null); setFormOpen(true); }}>
-            <Plus className="h-4 w-4" /> Add Collector
+          <Button size="sm" className="dashboard-primary-action gap-1.5" onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/15"><Plus className="h-3.5 w-3.5" /></span> Add Collector
           </Button>
         }
       />
@@ -218,7 +218,7 @@ function CollectorsPage() {
         </section>
 
         {/* Filters */}
-        <div className="surface-card flex flex-wrap items-center gap-2 p-3.5">
+        <div className="dashboard-filter-bar flex flex-wrap items-center gap-2">
           <div className="relative min-w-0 flex-1 basis-56">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -296,7 +296,7 @@ function CollectorsPage() {
             action={<Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>}
           />
         ) : (
-          <div className="surface-card overflow-auto scrollbar-thin">
+          <div className="dashboard-table-shell">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-muted/35">
@@ -317,7 +317,7 @@ function CollectorsPage() {
                   const s = computeCollectorStats(c.name, tasks, submissions);
                   const recentlyActive = computeCollectorIsRecentlyActive(c.name, tasks);
                   return (
-                    <TableRow key={c.id} className="cursor-pointer" onClick={() => openDetail(c)}>
+                    <TableRow key={c.id} className="dashboard-row" onClick={() => openDetail(c)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 ring-2 ring-primary/10">
@@ -462,7 +462,7 @@ function Metric({
     tone === "muted" ? "text-muted-foreground" :
     "text-primary";
   return (
-    <div className="interactive-card group p-5">
+    <div className="dashboard-metric group">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneStyle}`}>{icon}</span>

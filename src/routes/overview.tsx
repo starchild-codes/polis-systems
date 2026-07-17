@@ -147,7 +147,7 @@ function OverviewPage() {
             {recentTasks.length === 0 ? (
               <EmptyState icon={<ClipboardCheck className="h-5 w-5" />} title="No tasks yet" description="New cleanup tasks will appear here." />
             ) : recentTasks.map((task) => (
-              <div key={task.id} className="flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-primary/[0.035]">
+              <div key={task.id} className="relative flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-[background-color,transform] hover:bg-primary/[0.035] before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-r-full before:bg-primary/0 before:transition-colors hover:before:bg-primary/65">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.address || "No location provided"}</p>
@@ -161,7 +161,7 @@ function OverviewPage() {
             {recentSubmissions.length === 0 ? (
               <EmptyState icon={<ShieldCheck className="h-5 w-5" />} title="No submissions yet" description="Submissions from field collectors will appear here." />
             ) : recentSubmissions.map((submission) => (
-              <div key={submission.id} className="flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-primary/[0.035]">
+              <div key={submission.id} className="relative flex min-w-0 items-center justify-between gap-4 px-5 py-3.5 transition-[background-color,transform] hover:bg-primary/[0.035] before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-r-full before:bg-primary/0 before:transition-colors hover:before:bg-primary/65">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">{submission.collectorName}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -213,7 +213,7 @@ function ActivityCard({ title, viewAllTo, children }: { title: string; viewAllTo
 function Metric({ label, value, icon, tone = "default" }: { label: string; value: number; icon: React.ReactNode; tone?: "default" | "warning" | "success" }) {
   const toneClass = tone === "warning" ? "text-warning" : tone === "success" ? "text-success" : "text-primary";
   return (
-    <div className="interactive-card group p-5">
+    <div className="dashboard-metric group">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-current/10 transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none ${toneClass}`}>{icon}</span>
