@@ -124,7 +124,7 @@ function ProtectedShell({ children }: { children: ReactNode }) {
       <AccessPendingScreen
         email={user?.email ?? null}
         profileError={profileError}
-        onSignOut={() => { void signOut().then(() => router.navigate({ to: "/login" })); }}
+        onSignOut={() => { void signOut().then(() => router.navigate({ to: "/" })); }}
       />
     );
   }

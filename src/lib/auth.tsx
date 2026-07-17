@@ -21,6 +21,7 @@ export interface AuthContextType {
   isAuthorized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: string | null; requiresEmailConfirmation: boolean }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -36,19 +37,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
 
   useEffect(() => {
-    supabase.auth.getSession()
-      .then(({ data, error }) => {
-        setSession(error ? null : data.session);
-      })
-      .catch(() => setSession(null))
-      .finally(() => setLoading(false));
+    let active = true;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!active) return;
+        if (error) {
+          await supabase.auth.signOut({ scope: "local" });
+          setSession(null);
+        } else {
+          setSession(data.session);
+        }
+      } catch {
+        if (active) setSession(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setLoading(false);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -74,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileError(error.message);
       } else {
         setProfile(data as Profile | null);
-        setProfileError(null);
+        setProfileError(data ? null : "Profile not found");
       }
       setProfileLoading(false);
     })();
@@ -92,12 +107,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName?.trim() },
+        emailRedirectTo: new URL("/login", window.location.origin).toString(),
+      },
     });
     return {
       error: error?.message ?? null,
       requiresEmailConfirmation: !error && !data.session,
     };
+  }
+
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: new URL("/login", window.location.origin).toString(),
+      },
+    });
+    return { error: error?.message ?? null };
   }
 
   async function signOut() {
@@ -118,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthorized,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
       }}
     >

@@ -70,7 +70,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
                 <button
                   onClick={async () => {
                     await signOut();
-                    router.navigate({ to: "/login" });
+                    router.navigate({ to: "/" });
                   }}
                   role="menuitem"
                   className="focus-ring flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-accent"
