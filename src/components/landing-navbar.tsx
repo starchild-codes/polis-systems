@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
 import { BrandLogo } from "@/components/brand-logo";
 
 function Logo() {
@@ -16,7 +15,6 @@ function Logo() {
 }
 
 export function LandingNavbar() {
-  const { isAuthorized } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -61,22 +59,17 @@ export function LandingNavbar() {
 
         {/* Desktop actions */}
         <div className="hidden items-center gap-2 md:flex">
-          {isAuthorized && (
-            <Link to="/overview" className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white">
-              Open dashboard
-            </Link>
-          )}
           <Link
             to="/login"
             className="focus-ring rounded-lg px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
           >
-            Log In
+            Log in
           </Link>
           <Link
             to="/signup"
             className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark focus-visible:bg-primary-dark"
           >
-            Sign Up
+            Sign up
           </Link>
         </div>
 
@@ -112,24 +105,19 @@ export function LandingNavbar() {
             </a>
           ))}
           <div className="flex flex-col gap-2 border-t border-navy-100 pt-3">
-            {isAuthorized && (
-              <Link to="/overview" className="focus-ring rounded-lg px-3 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white" onClick={() => setMobileOpen(false)}>
-                Open dashboard
-              </Link>
-            )}
             <Link
               to="/login"
               onClick={() => setMobileOpen(false)}
               className="focus-ring rounded-lg px-3 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-primary hover:text-white focus-visible:bg-primary focus-visible:text-white"
             >
-              Log In
+              Log in
             </Link>
             <Link
               to="/signup"
               onClick={() => setMobileOpen(false)}
               className="focus-ring rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-dark focus-visible:bg-primary-dark"
             >
-              Sign Up
+              Sign up
             </Link>
           </div>
         </div>

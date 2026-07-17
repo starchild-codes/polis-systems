@@ -1,9 +1,10 @@
 import { createRootRouteWithContext, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useAuth, type AuthContextType } from "@/lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Toaster } from "@/components/ui/sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type RouterContext = { auth: AuthContextType };
 
@@ -36,8 +37,11 @@ function AccessPendingScreen({
 function ProtectedShell({ children }: { children: ReactNode }) {
   const { loading, session, profileLoading, profileError, isAuthorized, signOut, user } = useAuth();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isMobile = useIsMobile();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const mobileSidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -45,29 +49,65 @@ function ProtectedShell({ children }: { children: ReactNode }) {
     }
   }, [loading, session, router]);
 
-  // Wire the sidebar toggle button
+  const focusSidebarToggle = () => {
+    requestAnimationFrame(() => document.getElementById("sidebar-toggle")?.focus());
+  };
+
+  const closeMobileSidebar = (restoreFocus = false) => {
+    setMobileSidebarOpen(false);
+    if (restoreFocus) focusSidebarToggle();
+  };
+
+  const toggleSidebar = () => {
+    if (isMobile) setMobileSidebarOpen((open) => !open);
+    else setSidebarCollapsed((collapsed) => !collapsed);
+  };
+
   useEffect(() => {
-    const btn = document.getElementById("sidebar-toggle");
-    if (!btn) return;
-    const handler = () => {
-      if (window.matchMedia("(min-width: 768px)").matches) setSidebarCollapsed((c) => !c);
-      else setMobileSidebarOpen((open) => !open);
-    };
-    btn.addEventListener("click", handler);
-    return () => btn.removeEventListener("click", handler);
-  }, []);
+    setMobileSidebarOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobile) setMobileSidebarOpen(false);
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => mobileSidebarRef.current?.querySelector<HTMLElement>("a[href]")?.focus());
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [mobileSidebarOpen]);
 
   // Escape key closes sidebar
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const handler = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) {
+        if (mobileSidebarOpen) {
+          closeMobileSidebar(true);
+          return;
+        }
         setSidebarCollapsed(true);
-        setMobileSidebarOpen(false);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [mobileSidebarOpen]);
+
+  const handleMobileSidebarKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(mobileSidebarRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? []);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   if (loading || (session && profileLoading)) {
     return (
@@ -91,19 +131,23 @@ function ProtectedShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <div className="sticky top-0 hidden h-screen md:block">
+      <div id="desktop-dashboard-sidebar" className="sticky top-0 hidden h-screen md:block">
         <AppSidebar collapsed={sidebarCollapsed} />
       </div>
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <button aria-label="Close navigation" className="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="relative h-full w-[min(18rem,86vw)] animate-slide-in-left">
-            <AppSidebar collapsed={false} onNavigate={() => setMobileSidebarOpen(false)} />
+          <button type="button" tabIndex={-1} aria-label="Close navigation" className="absolute inset-0 z-0 bg-slate-950/50 backdrop-blur-[1px] animate-fade-in" onClick={() => closeMobileSidebar(true)} />
+          <div id="mobile-dashboard-sidebar" ref={mobileSidebarRef} onKeyDown={handleMobileSidebarKeyDown} className="relative z-10 h-full w-[min(18rem,86vw)] animate-slide-in-left">
+            <AppSidebar collapsed={false} onNavigate={() => closeMobileSidebar(false)} />
           </div>
         </div>
       )}
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader />
+        <AppHeader
+          onToggleSidebar={toggleSidebar}
+          sidebarExpanded={isMobile ? mobileSidebarOpen : !sidebarCollapsed}
+          sidebarControls={isMobile ? "mobile-dashboard-sidebar" : "desktop-dashboard-sidebar"}
+        />
         <main className="flex-1 bg-[linear-gradient(180deg,hsl(var(--muted)/0.55),hsl(var(--background))_28rem)]">{children}</main>
       </div>
     </div>

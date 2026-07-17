@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "@tanstack/react-router";
 import { Bell, ChevronDown, Menu, LogOut, Search, User as UserIcon } from "lucide-react";
 
-export function AppHeader() {
+type AppHeaderProps = {
+  onToggleSidebar: () => void;
+  sidebarExpanded: boolean;
+  sidebarControls: string;
+};
+
+export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }: AppHeaderProps) {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,8 +19,12 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-[4.5rem] items-center gap-3 border-b border-border/80 bg-background/95 px-4 backdrop-blur-md sm:gap-4 sm:px-5 lg:px-6">
       <button
         id="sidebar-toggle"
+        type="button"
+        onClick={onToggleSidebar}
         className="focus-ring flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label="Toggle sidebar"
+        aria-controls={sidebarControls}
+        aria-expanded={sidebarExpanded}
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -28,10 +39,7 @@ export function AppHeader() {
       </div>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <button aria-label="Notifications" className="focus-ring relative hidden h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex">
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-destructive ring-2 ring-background" />
-        </button>
+        <NotificationsPanel />
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -75,5 +83,106 @@ export function AppHeader() {
         </div>
       </div>
     </header>
+  );
+}
+
+function NotificationsPanel() {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!triggerRef.current?.contains(target) && !panelRef.current?.contains(target)) setOpen(false);
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    requestAnimationFrame(() => panelRef.current?.focus());
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      const panel = panelRef.current;
+      if (!trigger || !panel) return;
+      const triggerRect = trigger.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const margin = 8;
+      const offset = 8;
+      const width = Math.min(352, window.innerWidth - margin * 2);
+      const left = Math.min(Math.max(margin, triggerRect.right - width), window.innerWidth - width - margin);
+      const spaceBelow = window.innerHeight - triggerRect.bottom - margin;
+      const top = panelRect.height > spaceBelow
+        ? Math.max(margin, triggerRect.top - panelRect.height - offset)
+        : triggerRect.bottom + offset;
+      setPosition({ position: "fixed", top, left, width, visibility: "visible" });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
+
+  const handlePanelKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label="Open notifications"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="dashboard-notifications"
+        onClick={() => setOpen((current) => !current)}
+        className="focus-ring flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Bell className="h-4 w-4" />
+      </button>
+      {open && createPortal(
+        <div
+          id="dashboard-notifications"
+          ref={panelRef}
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="dashboard-notifications-title"
+          tabIndex={-1}
+          style={position}
+          onKeyDown={handlePanelKeyDown}
+          className="z-[100] max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-popover text-popover-foreground shadow-floating outline-none animate-scale-in"
+        >
+          <div className="p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/10">
+              <Bell className="h-5 w-5" />
+            </div>
+            <h2 id="dashboard-notifications-title" className="mt-4 text-sm font-semibold text-foreground">No new notifications</h2>
+            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">Task updates, review alerts, and collector activity will appear here.</p>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

@@ -148,7 +148,7 @@ function LandingPage() {
               <p className="mt-4 leading-7 text-white/70">Build a clearer, more accountable workflow for the people coordinating cleanup work and the collectors delivering it.</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link to="/signup" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-primary-dark">
-                  Request access <ArrowRight className="h-4 w-4" />
+                  Sign up <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link to="/login" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">
                   Log in
