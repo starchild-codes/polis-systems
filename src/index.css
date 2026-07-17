@@ -107,7 +107,31 @@ body {
   }
 
   .dashboard-row {
-    @apply relative cursor-pointer before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-r-full before:bg-primary/0 before:transition-colors hover:before:bg-primary/65 focus-within:before:bg-primary/65;
+    @apply cursor-pointer;
+  }
+
+  /* Pseudo-elements on a table row create an anonymous table cell in some
+     browsers, which shifts every row value one column to the right. Keep the
+     accent on the first real data cell instead. */
+  .dashboard-row > td:first-child {
+    position: relative;
+  }
+
+  .dashboard-row > td:first-child::before {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0;
+    width: 3px;
+    border-radius: 0 9999px 9999px 0;
+    background-color: transparent;
+    content: "";
+    transition: background-color 150ms;
+  }
+
+  .dashboard-row:hover > td:first-child::before,
+  .dashboard-row:focus-within > td:first-child::before {
+    background-color: hsl(var(--primary) / 0.65);
   }
 
   .dashboard-metric {
