@@ -277,13 +277,57 @@ export async function updateTask(
  */
 export async function deleteTaskSafely(id: string): Promise<void> {
   const { error } = await supabase.rpc("delete_task_safely", { p_task_id: id });
-  if (error) throw new Error(error.message);
+  if (!error) return;
+  if (!isMissingRpcError(error.message)) throw new Error(error.message);
+
+  // Compatibility for deployments that have not applied the RPC migration yet.
+  // The submission check keeps proof-of-work from being cascaded by the task FK.
+  const { count, error: submissionError } = await supabase
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("task_id", id);
+  if (submissionError) throw new Error(submissionError.message);
+  if ((count ?? 0) > 0) {
+    throw new Error("This task has a proof-of-work submission and cannot be deleted.");
+  }
+
+  const { data, error: deleteError } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", id)
+    .select("id");
+  if (deleteError) throw new Error(deleteError.message);
+  if (!data?.length) throw new Error("Task not found, already deleted, or you do not have permission to delete it.");
 }
 
 /** Permanently deletes an eligible collector through the guarded database RPC. */
 export async function deleteCollectorSafely(id: string): Promise<void> {
   const { error } = await supabase.rpc("delete_collector_safely", { p_collector_id: id });
-  if (error) throw new Error(error.message);
+  if (!error) return;
+  if (!isMissingRpcError(error.message)) throw new Error(error.message);
+
+  const { data: tasks, error: taskError } = await supabase
+    .from("tasks")
+    .select("id, status")
+    .eq("collector_id", id);
+  if (taskError) throw new Error(taskError.message);
+  if ((tasks ?? []).some((task) => ["assigned", "accepted", "in_progress", "submitted"].includes(task.status))) {
+    throw new Error("This collector has active assigned tasks. Reassign or remove those tasks before deleting the collector.");
+  }
+
+  const { count, error: submissionError } = await supabase
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("collector_id", id);
+  if (submissionError) throw new Error(submissionError.message);
+  if ((count ?? 0) > 0) throw new Error("This collector has proof-of-work history and cannot be deleted while those submissions are retained.");
+
+  const { error: deleteError } = await supabase.from("collectors").delete().eq("id", id);
+  if (deleteError) throw new Error(deleteError.message);
+}
+
+function isMissingRpcError(message: string) {
+  return message.includes("Could not find the function") || message.includes("schema cache");
 }
 
 // ─── Task events ────────────────────────────────────────────────────────────
