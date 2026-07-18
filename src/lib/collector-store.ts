@@ -4,6 +4,7 @@ import {
   insertCollector,
   updateCollector,
   deleteCollectorSafely,
+  fetchZones,
   zoneIdFromName,
   COLLECTOR_STATUS_DB_MAP,
   cacheCollectorName,
@@ -97,10 +98,13 @@ export const collectorStoreActions = {
   },
 
   async createCollector(input: NewCollectorInput): Promise<Collector> {
+    await fetchZones();
+    const zoneId = zoneIdFromName(input.zone);
+    if (!zoneId) throw new Error("The selected zone is unavailable. Refresh the page and try again.");
     const row: CollectorInsert = {
       name: input.name,
       phone_e164: input.phone,
-      zone_id: zoneIdFromName(input.zone),
+      zone_id: zoneId,
       status: COLLECTOR_STATUS_DB_MAP[input.status],
       collector_type: input.collectorType,
       organization_affiliation: input.organization,
@@ -122,7 +126,12 @@ export const collectorStoreActions = {
     const dbPatch: Partial<CollectorInsert> = {};
     if (patch.name !== undefined) dbPatch.name = patch.name;
     if (patch.phone !== undefined) dbPatch.phone_e164 = patch.phone;
-    if (patch.zone !== undefined) dbPatch.zone_id = zoneIdFromName(patch.zone);
+    if (patch.zone !== undefined) {
+      await fetchZones();
+      const zoneId = zoneIdFromName(patch.zone);
+      if (!zoneId) throw new Error("The selected zone is unavailable. Refresh the page and try again.");
+      dbPatch.zone_id = zoneId;
+    }
     if (patch.status !== undefined)
       dbPatch.status = COLLECTOR_STATUS_DB_MAP[patch.status];
     if (patch.collectorType !== undefined)
