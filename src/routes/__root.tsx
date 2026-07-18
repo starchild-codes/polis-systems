@@ -35,7 +35,7 @@ function AccessPendingScreen({
 }
 
 function ProtectedShell({ children }: { children: ReactNode }) {
-  const { loading, session, profileLoading, profileError, isAuthorized, signOut, user } = useAuth();
+  const { loading, session, profile, profileLoading, profileError, isAuthorized, signOut, user } = useAuth();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isMobile = useIsMobile();
@@ -109,7 +109,9 @@ function ProtectedShell({ children }: { children: ReactNode }) {
     }
   };
 
-  if (loading || (session && profileLoading)) {
+  const profileResolutionPending = Boolean(session && profile?.id !== session.user.id && !profileError);
+
+  if (loading || (session && (profileLoading || profileResolutionPending))) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted">
         <div className="text-sm font-medium text-muted-foreground">Loading…</div>

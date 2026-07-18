@@ -24,7 +24,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
   const navigate = useNavigate();
-  const { loading, session, profileLoading, isAuthorized, signIn, signUp, signInWithGoogle } = useAuth();
+  const { loading, session, profile, profileError, profileLoading, isAuthorized, signIn, signUp, signInWithGoogle } = useAuth();
   const isSignUp = mode === "signup";
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -33,11 +33,12 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const profileResolutionPending = Boolean(session && profile?.id !== session.user.id && !profileError);
 
   useEffect(() => {
-    if (loading || profileLoading || !session) return;
+    if (loading || profileLoading || profileResolutionPending || !session) return;
     navigate({ to: isAuthorized ? "/overview" : "/awaiting-approval", replace: true });
-  }, [loading, profileLoading, session, isAuthorized, navigate]);
+  }, [loading, profileLoading, profileResolutionPending, session, isAuthorized, navigate]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
