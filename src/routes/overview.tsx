@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeToOperationalDataChanges } from "@/lib/operational-events";
 import type { TaskStatus } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/overview")({
@@ -112,7 +113,10 @@ function OverviewPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    return subscribeToOperationalDataChanges(() => { void load(); });
+  }, [load]);
 
   if (loading) {
     return <OverviewLoading />;
