@@ -6,6 +6,7 @@ import {
   fetchAllTaskEvents,
   insertTaskEvent,
   deleteTaskSafely,
+  fetchZones,
   zoneIdFromName,
   collectorIdFromName,
   uiDateToIso,
@@ -120,13 +121,16 @@ export const taskStoreActions = {
   async createTask(input: NewTaskInput): Promise<Task> {
     const assigneeId = resolveAssigneeId(input.assignee);
     const status: string = input.assignee ? "assigned" : "draft";
+    await fetchZones();
+    const zoneId = zoneIdFromName(input.zone);
+    if (!zoneId) throw new Error("The selected zone is unavailable. Refresh the page and try again.");
     const row: TaskInsert = {
       title: input.title,
       description: input.description,
       address: input.location,
       latitude: input.latitude,
       longitude: input.longitude,
-      zone_id: zoneIdFromName(input.zone),
+      zone_id: zoneId,
       status,
       priority: input.priority,
       hotspot_type: input.hotspotType,
@@ -154,7 +158,12 @@ export const taskStoreActions = {
     if (patch.location !== undefined) dbPatch.address = patch.location;
     if (patch.latitude !== undefined) dbPatch.latitude = patch.latitude;
     if (patch.longitude !== undefined) dbPatch.longitude = patch.longitude;
-    if (patch.zone !== undefined) dbPatch.zone_id = zoneIdFromName(patch.zone);
+    if (patch.zone !== undefined) {
+      await fetchZones();
+      const zoneId = zoneIdFromName(patch.zone);
+      if (!zoneId) throw new Error("The selected zone is unavailable. Refresh the page and try again.");
+      dbPatch.zone_id = zoneId;
+    }
     if (patch.priority !== undefined) dbPatch.priority = patch.priority;
     if (patch.hotspotType !== undefined)
       dbPatch.hotspot_type = patch.hotspotType;

@@ -33,7 +33,7 @@ import {
 } from "@/lib/mock-data";
 import { useCollectorStore, useCollectorStoreState, collectorStoreActions, type NewCollectorInput } from "@/lib/collector-store";
 import { useTaskStore } from "@/lib/task-store";
-import { useZones } from "@/lib/zone-store";
+import { FALLBACK_ZONES, useZones } from "@/lib/zone-store";
 import { useSubmissionStore } from "@/lib/submission-store";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -85,7 +85,14 @@ function CollectorsPage() {
   const collectors = useCollectorStore();
   const { loading, error } = useCollectorStoreState();
   const zones = useZones();
-  const zoneNames = zones.length > 0 ? zones.map((z) => z.name) : Array.from(new Set(collectors.map((c) => c.zone)));
+  const zoneNames = useMemo(
+    () => Array.from(new Set([
+      ...FALLBACK_ZONES,
+      ...zones.map((zone) => zone.name),
+      ...collectors.map((collector) => collector.zone),
+    ])),
+    [collectors, zones],
+  );
   const { tasks } = useTaskStore();
   const submissions = useSubmissionStore();
 
