@@ -9,6 +9,7 @@ import {
   cacheCollectorName,
   type CollectorInsert,
 } from "@/lib/supabase-data";
+import { notifyOperationalDataChanged } from "@/lib/operational-events";
 import type {
   Collector,
   CollectorStatus,
@@ -113,6 +114,7 @@ export const collectorStoreActions = {
       collectors: [collector, ...state.collectors],
     };
     emit();
+    notifyOperationalDataChanged();
     return collector;
   },
 
@@ -133,6 +135,7 @@ export const collectorStoreActions = {
 
     await updateCollector(id, dbPatch);
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async setStatus(id: string, status: CollectorStatus) {
@@ -140,11 +143,13 @@ export const collectorStoreActions = {
       status: COLLECTOR_STATUS_DB_MAP[status],
     });
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async deleteCollector(id: string) {
     await deleteCollectorSafely(id);
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 };
 

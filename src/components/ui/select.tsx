@@ -9,7 +9,7 @@ const SelectContext = createContext<{
   open: boolean;
   setOpen: (o: boolean) => void;
   selectedLabel: string;
-  setSelectedLabel: (l: string) => void;
+  selectValue: (value: string, label: string) => void;
   triggerRef: React.RefObject<HTMLDivElement>;
   contentRef: React.RefObject<HTMLDivElement>;
 } | null>(null);
@@ -24,8 +24,25 @@ interface SelectProps {
 export function Select({ value, onValueChange, children, className }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState("");
+  const selectedValueRef = useRef(value);
   const triggerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // A parent clearing a controlled Select must also clear the label rendered
+  // by this component. Selections made through SelectItem set the ref first,
+  // so their label remains visible.
+  useEffect(() => {
+    if (selectedValueRef.current !== value) {
+      selectedValueRef.current = value;
+      setSelectedLabel("");
+    }
+  }, [value]);
+
+  const selectValue = (nextValue: string, label: string) => {
+    selectedValueRef.current = nextValue;
+    setSelectedLabel(label);
+    onValueChange(nextValue);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +62,7 @@ export function Select({ value, onValueChange, children, className }: SelectProp
   }, [open]);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectedLabel, setSelectedLabel, triggerRef, contentRef }}>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectedLabel, selectValue, triggerRef, contentRef }}>
       <div ref={triggerRef} className={cn("relative inline-block w-full", className)}>
         {children}
       </div>
@@ -141,15 +158,13 @@ export function SelectItem({ value, children, className }: { value: string; chil
       aria-selected={isSelected}
       tabIndex={0}
       onClick={() => {
-        ctx.onValueChange(value);
-        ctx.setSelectedLabel(typeof children === "string" ? children : String(children));
+        ctx.selectValue(value, typeof children === "string" ? children : String(children));
         ctx.setOpen(false);
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          ctx.onValueChange(value);
-          ctx.setSelectedLabel(typeof children === "string" ? children : String(children));
+          ctx.selectValue(value, typeof children === "string" ? children : String(children));
           ctx.setOpen(false);
         }
       }}

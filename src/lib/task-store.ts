@@ -13,6 +13,7 @@ import {
   type TaskInsert,
 } from "@/lib/supabase-data";
 import { getCollectors } from "@/lib/collector-store";
+import { notifyOperationalDataChanged } from "@/lib/operational-events";
 import type {
   Task,
   TaskEvent,
@@ -142,6 +143,7 @@ export const taskStoreActions = {
       await insertTaskEvent(task.id, "assigned", `Assigned to ${input.assignee}`);
     }
     await this.refresh();
+    notifyOperationalDataChanged();
     return task;
   },
 
@@ -172,6 +174,7 @@ export const taskStoreActions = {
     await updateTask(taskId, dbPatch);
     await insertTaskEvent(taskId, "updated", "Task details updated");
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async assignCollector(taskId: string, collectorName: string) {
@@ -185,6 +188,7 @@ export const taskStoreActions = {
     });
     await insertTaskEvent(taskId, "assigned", `Assigned to ${collectorName}`);
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async reassignCollector(taskId: string, collectorName: string) {
@@ -205,17 +209,20 @@ export const taskStoreActions = {
         : `Assigned to ${collectorName}`,
     );
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async cancelTask(taskId: string) {
     await updateTask(taskId, { status: "canceled" });
     await insertTaskEvent(taskId, "canceled", "Task canceled by operator");
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async deleteTask(taskId: string) {
     await deleteTaskSafely(taskId);
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async requestResubmission(taskId: string) {
@@ -226,6 +233,7 @@ export const taskStoreActions = {
       `Resubmission requested from ${task?.assignee ?? "collector"}`,
     );
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async approveTask(taskId: string, _now?: string) {
@@ -237,6 +245,7 @@ export const taskStoreActions = {
       `Submission approved${task?.assignee ? ` — ${task.assignee}` : ""}`,
     );
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 
   async rejectTask(taskId: string, _now?: string, reason?: string) {
@@ -247,6 +256,7 @@ export const taskStoreActions = {
       `Submission rejected${reason ? ` — ${reason}` : ""}`,
     );
     await this.refresh();
+    notifyOperationalDataChanged();
   },
 };
 
