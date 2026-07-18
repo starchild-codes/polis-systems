@@ -63,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await supabase.auth.signOut({ scope: "local" });
           setSession(null);
         } else {
+          // Mark the profile as loading before publishing a restored session so
+          // route guards cannot briefly classify an authorized user as pending.
+          setProfileLoading(Boolean(data.session));
           setSession(data.session);
         }
       } catch {
@@ -73,6 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      // Clear the previous user's authorization state before the new session
+      // reaches consumers. The profile effect below will load the matching one.
+      setProfile(null);
+      setProfileError(null);
+      setOrganizationMembership(null);
+      setOrganizationName(null);
+      setProfileLoading(Boolean(newSession));
       setSession(newSession);
       setLoading(false);
     });
