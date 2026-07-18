@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { resetOperationalState } from "@/lib/operational-state";
@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [organizationMembership, setOrganizationMembership] = useState<OrganizationMembership | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const sessionUserIdRef = useRef<string | null>(null);
 
   const user = session?.user ?? null;
   const userId = user?.id ?? null;
@@ -61,25 +62,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         if (error) {
           await supabase.auth.signOut({ scope: "local" });
+          sessionUserIdRef.current = null;
           setSession(null);
         } else {
-          // Mark the profile as loading before publishing a restored session so
-          // route guards cannot briefly classify an authorized user as pending.
-          setProfileLoading(Boolean(data.session));
+          const nextUserId = data.session?.user.id ?? null;
+          if (sessionUserIdRef.current !== nextUserId) {
+            // Mark the profile as loading before publishing a new identity so
+            // route guards cannot briefly classify it as pending.
+            sessionUserIdRef.current = nextUserId;
+            setProfileLoading(Boolean(data.session));
+          }
           setSession(data.session);
         }
       } catch {
-        if (active) setSession(null);
+        if (active) {
+          sessionUserIdRef.current = null;
+          setSession(null);
+        }
       } finally {
         if (active) setLoading(false);
       }
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      // TOKEN_REFRESHED is expected when a backgrounded tab becomes active.
-      // It has the same user, so retaining the loaded profile avoids a full
-      // dashboard loading state on every tab switch.
-      const identityChanged = event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT";
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      // Revalidation after a tab becomes active can emit SIGNED_IN as well as
+      // TOKEN_REFRESHED. Only the user ID—not the event name—determines
+      // whether profile and organization data must be reloaded.
+      const nextUserId = newSession?.user.id ?? null;
+      const identityChanged = sessionUserIdRef.current !== nextUserId;
+      sessionUserIdRef.current = nextUserId;
       if (identityChanged) {
         setProfile(null);
         setProfileError(null);
