@@ -75,14 +75,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      // Clear the previous user's authorization state before the new session
-      // reaches consumers. The profile effect below will load the matching one.
-      setProfile(null);
-      setProfileError(null);
-      setOrganizationMembership(null);
-      setOrganizationName(null);
-      setProfileLoading(Boolean(newSession));
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // TOKEN_REFRESHED is expected when a backgrounded tab becomes active.
+      // It has the same user, so retaining the loaded profile avoids a full
+      // dashboard loading state on every tab switch.
+      const identityChanged = event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT";
+      if (identityChanged) {
+        setProfile(null);
+        setProfileError(null);
+        setOrganizationMembership(null);
+        setOrganizationName(null);
+        setProfileLoading(Boolean(newSession));
+      }
       setSession(newSession);
       setLoading(false);
     });
