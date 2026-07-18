@@ -72,6 +72,18 @@ const STATUS_STYLE: Record<CollectorStatus, string> = {
   pending: "bg-warning/10 text-warning border-warning/25",
 };
 
+function collectorSaveError(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const message = error.message.toLowerCase();
+  if (message.includes("collectors_organization_phone_e164_key") || message.includes("phone_e164")) {
+    return "A collector with this phone number is already registered in this organization.";
+  }
+  if (message.includes("row-level security") || message.includes("permission denied")) {
+    return "Only organization administrators can add collectors.";
+  }
+  return error.message;
+}
+
 function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
   return (
     <span className={`inline-flex min-h-5 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
@@ -143,7 +155,7 @@ function CollectorsPage() {
       const c = await collectorStoreActions.createCollector(input);
       toast.success("Collector added", { description: `${c.name} is now ${STATUS_LABEL[c.status].toLowerCase()}.` });
     } catch (err) {
-      toast.error("Failed to add collector", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to add collector", { description: collectorSaveError(err) });
     } finally {
       setSaving(false);
     }
