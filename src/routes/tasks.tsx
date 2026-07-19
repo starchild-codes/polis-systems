@@ -26,7 +26,7 @@ import { useCollectorStore } from "@/lib/collector-store";
 import { useZones } from "@/lib/zone-store";
 import { CreateTaskSheet } from "@/components/tasks/create-task-sheet";
 import { TaskDetailDrawer } from "@/components/tasks/task-detail-drawer";
-import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2, ClipboardCheck } from "lucide-react";
+import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2, ClipboardCheck, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -407,8 +407,11 @@ function TasksPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-52">
                             <DropdownMenuItem onClick={() => openDrawer(t)}><Eye className="h-4 w-4 text-muted-foreground" /> View details</DropdownMenuItem>
-                            {t.status === "open" && (
+                            {!(["submitted", "approved", "canceled"] as TaskStatus[]).includes(t.status) && (
                               <DropdownMenuItem onClick={() => { setEditingTask(t); setCreateOpen(true); }}><Pencil className="h-4 w-4 text-muted-foreground" /> Edit task</DropdownMenuItem>
+                            )}
+                            {!(["submitted", "approved", "canceled"] as TaskStatus[]).includes(t.status) && (
+                              <DropdownMenuItem onClick={() => openDrawer(t)}><UserRoundCog className="h-4 w-4 text-muted-foreground" /> {t.assignee ? "Reassign collector" : "Assign collector"}</DropdownMenuItem>
                             )}
                             {(t.status === "open" || t.status === "assigned" || t.status === "declined") && (
                               <>

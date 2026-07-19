@@ -456,7 +456,7 @@ function RowActions({
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-9 w-9" aria-label={`Open actions for ${collector.name}`}><MoreHorizontal className="h-4 w-4" /></Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={onEdit}><Pencil className="h-4 w-4 text-muted-foreground" /> Edit collector</DropdownMenuItem>
         <DropdownMenuSeparator />
         {collector.status !== "active" && (

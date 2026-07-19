@@ -153,6 +153,8 @@ export const taskStoreActions = {
 
   async editTask(taskId: string, patch: Partial<NewTaskInput>) {
     const dbPatch: Partial<TaskInsert> = {};
+    const currentTask = state.tasks.find((task) => task.id === taskId);
+    let assignmentEvent: string | null = null;
     if (patch.title !== undefined) dbPatch.title = patch.title;
     if (patch.description !== undefined) dbPatch.description = patch.description;
     if (patch.location !== undefined) dbPatch.address = patch.location;
@@ -176,12 +178,22 @@ export const taskStoreActions = {
       dbPatch.reference_photo_path = patch.hasReferencePhoto ? "placeholder" : null;
     if (patch.dueAt !== undefined) dbPatch.due_at = uiDateToIso(patch.dueAt);
     if (patch.assignee !== undefined) {
-      dbPatch.collector_id = resolveAssigneeId(patch.assignee);
-      dbPatch.status = patch.assignee ? "assigned" : "draft";
+      const collectorId = resolveAssigneeId(patch.assignee);
+      if (patch.assignee && !collectorId) throw new Error("The selected collector is unavailable. Refresh the page and try again.");
+      dbPatch.collector_id = collectorId;
+
+      const assignmentChanged = patch.assignee !== (currentTask?.assignee ?? "");
+      if (assignmentChanged && patch.assignee) {
+        if (!currentTask || ["open", "declined", "rejected"].includes(currentTask.status)) dbPatch.status = "assigned";
+        assignmentEvent = currentTask?.assignee
+          ? `Reassigned from ${currentTask.assignee} to ${patch.assignee}`
+          : `Assigned to ${patch.assignee}`;
+      }
     }
 
     await updateTask(taskId, dbPatch);
     await insertTaskEvent(taskId, "updated", "Task details updated");
+    if (assignmentEvent) await insertTaskEvent(taskId, currentTask?.assignee ? "reassigned" : "assigned", assignmentEvent);
     await this.refresh();
     notifyOperationalDataChanged();
   },
