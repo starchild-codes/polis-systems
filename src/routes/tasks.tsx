@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, EmptyState } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,9 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/tasks")({
+  validateSearch: (search: Record<string, unknown>): { query?: string } => ({
+    query: typeof search.query === "string" && search.query.trim() ? search.query : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Cleanup Tasks — Polis Systems" },
@@ -58,10 +61,11 @@ const SUMMARY_CHIPS: { key: string; label: string; match: (t: Task, overdue: boo
 ];
 
 function TasksPage() {
+  const routeSearch = Route.useSearch();
   const { tasks, loading, error } = useTaskStore();
   const zones = useZones();
   const zoneNames = zones.length > 0 ? zones.map((z) => z.name) : ["North", "South", "East", "West", "Central"];
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(routeSearch.query ?? "");
   const [status, setStatus] = useState<TaskStatus | "all">("all");
   const [collectorFilter, setCollectorFilter] = useState<string>("all");
   const [zone, setZone] = useState<Zone | "all">("all");
@@ -81,6 +85,10 @@ function TasksPage() {
   const collectorNames = useMemo(() => Array.from(new Set(collectors.map((c) => c.name))), [collectors]);
   const assignableCollectorNames = useMemo(() => computeAssignableCollectors(collectors).map((c) => c.name), [collectors]);
 
+  useEffect(() => {
+    setQuery(routeSearch.query ?? "");
+  }, [routeSearch.query]);
+
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
       const overdue = isTaskOverdue(t);
@@ -98,7 +106,7 @@ function TasksPage() {
         if (due < now || due > now + 7 * 86_400_000) return false;
       }
       if (query) {
-        const haystack = `${t.title} ${t.location} ${t.assignee ?? ""} ${t.id}`.toLowerCase();
+        const haystack = `${t.title} ${t.location} ${t.assignee ?? ""} ${t.zone} ${t.hotspotType} ${t.id}`.toLowerCase();
         if (!haystack.includes(query.toLowerCase())) return false;
       }
       return true;

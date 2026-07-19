@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "@tanstack/react-router";
-import { Bell, ChevronDown, Menu, LogOut, Search, User as UserIcon } from "lucide-react";
+import { Bell, ChevronDown, ClipboardList, MapPin, Menu, LogOut, Search, User as UserIcon, Users } from "lucide-react";
+import { useTaskStore } from "@/lib/task-store";
+import { useCollectorStore } from "@/lib/collector-store";
 
 type AppHeaderProps = {
   onToggleSidebar: () => void;
@@ -29,14 +31,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
         <Menu className="h-5 w-5" />
       </button>
 
-      <div className="relative hidden w-full max-w-[36rem] sm:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          aria-label="Search operations"
-          placeholder="Search tasks, collectors, zones..."
-          className="h-10 w-full rounded-xl border border-primary/12 bg-primary/[0.035] pl-9 pr-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground/80 hover:border-primary/25 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
-        />
-      </div>
+      <OperationsSearch />
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         <NotificationsPanel />
@@ -83,6 +78,107 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
         </div>
       </div>
     </header>
+  );
+}
+
+function OperationsSearch() {
+  const router = useRouter();
+  const { tasks } = useTaskStore();
+  const collectors = useCollectorStore();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const results = useMemo(() => {
+    if (!normalizedQuery) return [];
+    const taskMatches = tasks
+      .filter((task) => `${task.title} ${task.location} ${task.assignee ?? ""} ${task.zone} ${task.hotspotType}`.toLowerCase().includes(normalizedQuery))
+      .slice(0, 4)
+      .map((task) => ({ kind: "task" as const, title: task.title, detail: `${task.zone} · ${task.location}`, query: task.title }));
+    const collectorMatches = collectors
+      .filter((collector) => `${collector.name} ${collector.phone} ${collector.zone}`.toLowerCase().includes(normalizedQuery))
+      .slice(0, 3)
+      .map((collector) => ({ kind: "collector" as const, title: collector.name, detail: `${collector.zone} · ${collector.phone}`, query: collector.name }));
+    const zoneMatches = Array.from(new Set([...tasks.map((task) => task.zone), ...collectors.map((collector) => collector.zone)]))
+      .filter((zone) => zone.toLowerCase().includes(normalizedQuery))
+      .slice(0, 2)
+      .map((zone) => ({ kind: "zone" as const, title: `${zone} zone`, detail: "View tasks in this zone", query: zone }));
+    return [...taskMatches, ...collectorMatches, ...zoneMatches];
+  }, [collectors, normalizedQuery, tasks]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  function navigateToResult(result: (typeof results)[number]) {
+    setOpen(false);
+    setQuery("");
+    router.navigate({
+      to: result.kind === "collector" ? "/collectors" : "/tasks",
+      search: { query: result.query },
+    });
+  }
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!normalizedQuery) return;
+    if (results[0]) {
+      navigateToResult(results[0]);
+      return;
+    }
+    setOpen(false);
+    router.navigate({ to: "/tasks", search: { query: query.trim() } });
+  }
+
+  return (
+    <div ref={searchRef} className="relative hidden w-full max-w-[36rem] sm:block">
+      <form onSubmit={submitSearch}>
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(event) => { setQuery(event.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setOpen(false);
+          }}
+          aria-label="Search tasks, collectors, and zones"
+          aria-autocomplete="list"
+          aria-expanded={open && Boolean(normalizedQuery)}
+          aria-controls="operations-search-results"
+          placeholder="Search tasks, collectors, zones..."
+          className="h-10 w-full rounded-xl border border-primary/12 bg-primary/[0.035] pl-9 pr-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground/80 hover:border-primary/25 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+        />
+      </form>
+      {open && normalizedQuery && (
+        <div id="operations-search-results" role="listbox" className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-full overflow-hidden rounded-xl border border-border/90 bg-popover p-1.5 shadow-floating animate-pop-in motion-reduce:animate-none">
+          {results.length > 0 ? results.map((result) => {
+            const Icon = result.kind === "task" ? ClipboardList : result.kind === "collector" ? Users : MapPin;
+            const label = result.kind === "task" ? "Task" : result.kind === "collector" ? "Collector" : "Zone";
+            return (
+              <button
+                key={`${result.kind}-${result.title}`}
+                type="button"
+                role="option"
+                onClick={() => navigateToResult(result)}
+                className="focus-ring flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition-colors hover:bg-accent"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"><Icon className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-foreground">{result.title}</span><span className="block truncate text-xs text-muted-foreground">{result.detail}</span></span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{label}</span>
+              </button>
+            );
+          }) : (
+            <div className="px-3 py-4 text-sm text-muted-foreground">No matching tasks, collectors, or zones. Press Enter to search tasks.</div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
