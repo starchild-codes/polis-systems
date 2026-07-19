@@ -16,7 +16,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-[4.5rem] items-center gap-3 border-b border-border/80 bg-background/95 px-4 backdrop-blur-md sm:gap-4 sm:px-5 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-[4.75rem] items-center gap-3 border-b border-border/80 bg-background/[0.94] px-4 shadow-[0_1px_0_hsl(222_35%_12%/0.02)] backdrop-blur-md sm:gap-4 sm:px-5 lg:px-8">
       <button
         id="sidebar-toggle"
         type="button"
@@ -29,12 +29,12 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
         <Menu className="h-5 w-5" />
       </button>
 
-      <div className="relative hidden w-full max-w-[35rem] sm:block">
+      <div className="relative hidden w-full max-w-[36rem] sm:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           aria-label="Search operations"
           placeholder="Search tasks, collectors, zones..."
-          className="h-10 w-full rounded-lg border border-primary/15 bg-primary/[0.045] pl-9 pr-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground/80 hover:border-primary/25 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+          className="h-10 w-full rounded-xl border border-primary/12 bg-primary/[0.035] pl-9 pr-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow,background-color] placeholder:text-muted-foreground/80 hover:border-primary/25 focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
         />
       </div>
 
@@ -45,7 +45,7 @@ export function AppHeader({ onToggleSidebar, sidebarExpanded, sidebarControls }:
             onClick={() => setMenuOpen(!menuOpen)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            className="focus-ring flex items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-muted sm:px-2"
+            className="focus-ring flex items-center gap-2 rounded-xl px-1.5 py-1.5 transition-colors hover:bg-muted sm:px-2"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 ring-1 ring-inset ring-primary/10">
               <UserIcon className="h-4 w-4 text-primary" />

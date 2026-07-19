@@ -132,7 +132,7 @@ function ProtectedShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="polis-dashboard flex min-h-screen w-full bg-background">
       <div id="desktop-dashboard-sidebar" className="sticky top-0 hidden h-screen md:block">
         <AppSidebar collapsed={sidebarCollapsed} />
       </div>
@@ -150,7 +150,7 @@ function ProtectedShell({ children }: { children: ReactNode }) {
           sidebarExpanded={isMobile ? mobileSidebarOpen : !sidebarCollapsed}
           sidebarControls={isMobile ? "mobile-dashboard-sidebar" : "desktop-dashboard-sidebar"}
         />
-        <main className="flex-1 bg-[linear-gradient(180deg,hsl(var(--muted)/0.55),hsl(var(--background))_28rem)]">{children}</main>
+        <main className="dashboard-main flex-1">{children}</main>
       </div>
     </div>
   );
