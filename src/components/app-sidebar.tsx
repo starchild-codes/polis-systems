@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
+import { useAuth } from "@/lib/auth";
 
 const primaryNav = [
   { title: "Overview", url: "/overview", icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const settingsNav = { title: "Settings", url: "/settings", icon: Settings } as c
 
 export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { organizationName, organizationRole } = useAuth();
 
   return (
     <aside
@@ -35,10 +37,17 @@ export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNa
         {!collapsed && (
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-white">Polis Systems</div>
-            <div className="truncate text-xs text-sidebar-foreground/75">Operations Platform</div>
+            <div className="truncate text-xs text-sidebar-foreground/70">Civic operations</div>
           </div>
         )}
       </div>
+
+      {!collapsed && (
+        <div className="mx-3 mt-3 rounded-xl border border-white/10 bg-slate-950/10 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+          <p className="truncate text-xs font-medium text-white/90">{organizationName ?? "Operations workspace"}</p>
+          <p className="mt-0.5 text-[10px] capitalize tracking-wide text-white/55">{organizationRole ?? "Member"} access</p>
+        </div>
+      )}
 
       <nav aria-label="Workspace navigation" className="flex-1 space-y-1 overflow-y-auto p-2.5">
         {!collapsed && <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/60">Workspace</p>}

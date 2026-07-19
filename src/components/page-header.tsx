@@ -9,10 +9,22 @@ export function PageHeader({
   description?: string;
   actions?: ReactNode;
 }) {
+  const context = {
+    Overview: "Command center",
+    "Cleanup Tasks": "Field operations",
+    "Submission Review": "Verification desk",
+    Collectors: "People and coverage",
+    Reports: "Operational intelligence",
+    Settings: "Workspace configuration",
+  }[title] ?? "Operations workspace";
+
   return (
     <div className="dashboard-page-header flex flex-col items-start justify-between gap-4 border-b border-border/80 bg-background/90 px-4 py-5 backdrop-blur-sm sm:flex-row sm:items-center sm:px-5 lg:px-8">
-      <div className="min-w-0">
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/80">Operations workspace</p>
+      <div className="relative min-w-0 pl-4 before:absolute before:bottom-0 before:left-0 before:top-0 before:w-px before:bg-primary/25">
+        <p className="mb-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-primary/80">
+          <span aria-hidden="true" className="-ml-[1.18rem] h-2 w-2 rounded-full border-2 border-background bg-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.3)]" />
+          {context}
+        </p>
         <h1 className="text-2xl font-semibold tracking-[-0.035em] text-foreground sm:text-[1.7rem]">{title}</h1>
         {description && <p className="mt-1 text-sm leading-5 text-muted-foreground">{description}</p>}
       </div>

@@ -89,7 +89,7 @@ function collectorSaveError(error: unknown): string | undefined {
 
 function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
   return (
-    <span className={`inline-flex min-h-5 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
+    <span className={`inline-flex min-h-5 items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
       <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
       {STATUS_LABEL[status]}
     </span>
@@ -237,7 +237,7 @@ function CollectorsPage() {
 
       <div className="page-shell animate-fade-up">
         {/* Summary metrics */}
-        <section aria-label="Collector metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Collector metrics" className="collector-metric-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Metric label="Total Collectors" value={counts.total} icon={<Users className="h-4 w-4" />} />
           <Metric label="Active" value={counts.active} icon={<UserCheck className="h-4 w-4" />} tone="success" />
           <Metric label="Pending Registration" value={counts.pending} icon={<UserPlus className="h-4 w-4" />} tone="warning" />

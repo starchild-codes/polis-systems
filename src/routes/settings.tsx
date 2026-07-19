@@ -24,9 +24,9 @@ function SettingsPage() {
         description="Organisation, zones, and notification preferences"
       />
 
-      <div className="page-shell max-w-5xl animate-fade-up">
+      <div className="settings-layout page-shell max-w-5xl animate-fade-up">
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.85fr)]">
-          <div className="space-y-5">
+          <div className="settings-cluster surface-card overflow-hidden divide-y divide-border/80">
             <Section title="Organisation" description="Displayed on reports and collector messages.">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Organisation name"><Input defaultValue="Bengaluru Municipal Sanitation" /></Field>
@@ -46,11 +46,13 @@ function SettingsPage() {
             </Section>
           </div>
 
-          <Section title="Notifications" description="Choose what triggers a notification.">
-            <ToggleRow label="New submissions" description="Notify when a collector submits proof-of-work." defaultChecked />
-            <ToggleRow label="Urgent tasks" description="Alert operators for urgent priority tasks." defaultChecked />
-            <ToggleRow label="Weekly digest" description="Every Monday morning summary." />
-          </Section>
+          <div className="settings-cluster surface-card overflow-hidden">
+            <Section title="Notifications" description="Choose what triggers a notification.">
+              <ToggleRow label="New submissions" description="Notify when a collector submits proof-of-work." defaultChecked />
+              <ToggleRow label="Urgent tasks" description="Alert operators for urgent priority tasks." defaultChecked />
+              <ToggleRow label="Weekly digest" description="Every Monday morning summary." />
+            </Section>
+          </div>
         </div>
 
         <div className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
@@ -72,13 +74,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="surface-card overflow-hidden">
-      <div className="border-b border-border/80 bg-muted/[0.28] px-5 py-4">
+    <section className="settings-section overflow-hidden">
+      <div className="px-5 pb-3 pt-5">
         <p className="section-label mb-1">Configuration</p>
         <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
         {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
-      <div className="space-y-4 p-5">{children}</div>
+      <div className="space-y-4 px-5 pb-5">{children}</div>
     </section>
   );
 }

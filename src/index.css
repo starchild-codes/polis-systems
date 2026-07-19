@@ -150,6 +150,11 @@ body {
 /* Authenticated dashboard system. Scoped so the public landing page keeps its
    intentionally distinct, editorial presentation. */
 .polis-dashboard {
+  --dashboard-page: 210 33% 98%;
+  --dashboard-surface: 0 0% 100%;
+  --dashboard-surface-muted: 210 35% 97%;
+  --dashboard-border: 214 26% 89%;
+  --dashboard-ink: 222 47% 11%;
   background: hsl(210 33% 98%);
 }
 
@@ -158,7 +163,10 @@ body {
   overflow-x: clip;
   background:
     radial-gradient(circle at 92% -10%, hsl(var(--primary) / 0.065), transparent 24rem),
+    linear-gradient(hsl(var(--primary) / 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.018) 1px, transparent 1px),
     linear-gradient(180deg, hsl(210 35% 98%) 0%, hsl(var(--background)) 30rem);
+  background-size: auto, 32px 32px, 32px 32px, auto;
 }
 
 .polis-dashboard #desktop-dashboard-sidebar > aside,
@@ -182,24 +190,24 @@ body {
 
 .polis-dashboard .surface-card,
 .polis-dashboard .dashboard-table-shell {
-  border-color: hsl(214 28% 89%);
+  border-color: hsl(var(--dashboard-border));
   border-radius: 1rem;
-  box-shadow: 0 1px 2px hsl(222 35% 12% / 0.025), 0 10px 30px hsl(222 35% 12% / 0.025);
+  box-shadow: 0 1px 2px hsl(222 35% 12% / 0.02), 0 8px 22px hsl(222 35% 12% / 0.018);
 }
 
 .polis-dashboard .dashboard-filter-bar {
-  border-color: hsl(214 28% 89%);
-  border-radius: 0.9rem;
-  background: hsl(0 0% 100% / 0.9);
-  box-shadow: 0 1px 2px hsl(222 35% 12% / 0.02);
+  border-color: hsl(var(--dashboard-border));
+  border-radius: 0.8rem;
+  background: hsl(var(--dashboard-surface) / 0.82);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.8);
 }
 
 .polis-dashboard .dashboard-metric {
   min-height: 7.5rem;
-  border-color: hsl(214 28% 89%);
+  border-color: hsl(var(--dashboard-border));
   border-radius: 1rem;
   background: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 42% 99%) 100%);
-  box-shadow: 0 1px 2px hsl(222 35% 12% / 0.02), 0 9px 20px hsl(222 35% 12% / 0.025);
+  box-shadow: 0 1px 2px hsl(222 35% 12% / 0.018);
 }
 
 .polis-dashboard .dashboard-metric::before {
@@ -221,10 +229,40 @@ body {
 .polis-dashboard .dashboard-table-shell th {
   height: 3rem;
   background: hsl(210 38% 97% / 0.98);
+  text-transform: none;
+  letter-spacing: 0.025em;
+  font-size: 0.7rem;
 }
 
 .polis-dashboard .dashboard-table-shell td {
   padding-block: 0.95rem;
+}
+
+.polis-dashboard .dashboard-row > td:first-child {
+  padding-left: 1.35rem;
+}
+
+.polis-dashboard .dashboard-row > td:first-child::before {
+  top: 50%;
+  bottom: auto;
+  left: 0.55rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border: 1px solid hsl(var(--primary) / 0.35);
+  border-radius: 999px;
+  background: hsl(var(--background));
+  transform: translateY(-50%);
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.polis-dashboard .dashboard-row:hover > td:first-child::before,
+.polis-dashboard .dashboard-row:focus-within > td:first-child::before {
+  background: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+.polis-dashboard .dashboard-row:hover {
+  background: hsl(var(--primary) / 0.028);
 }
 
 .polis-dashboard .dashboard-primary-action {
@@ -247,6 +285,75 @@ body {
   box-shadow: 0 8px 18px hsl(var(--primary) / 0.1);
 }
 
+.polis-dashboard .collector-metric-grid > :first-child,
+.polis-dashboard .review-metric-grid > :first-child,
+.polis-dashboard .report-metric-grid > :first-child {
+  position: relative;
+  overflow: hidden;
+  border-color: hsl(var(--primary) / 0.18);
+  background:
+    radial-gradient(circle at 88% 22%, hsl(var(--primary) / 0.1), transparent 5rem),
+    linear-gradient(135deg, hsl(0 0% 100%), hsl(var(--primary) / 0.045));
+}
+
+.polis-dashboard .collector-metric-grid > :first-child::after,
+.polis-dashboard .review-metric-grid > :first-child::after,
+.polis-dashboard .report-metric-grid > :first-child::after {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 0.85rem;
+  width: 4.5rem;
+  height: 1.4rem;
+  border-bottom: 1px solid hsl(var(--primary) / 0.18);
+  border-left: 1px solid hsl(var(--primary) / 0.18);
+  border-radius: 0 0 0 1rem;
+  content: "";
+  pointer-events: none;
+}
+
+.polis-dashboard .report-filter-panel {
+  border-radius: 0.85rem;
+  box-shadow: none;
+}
+
+.polis-dashboard .report-visual-grid > .surface-card {
+  box-shadow: none;
+}
+
+.polis-dashboard .settings-cluster {
+  border-radius: 0.8rem;
+  box-shadow: none;
+}
+
+.polis-dashboard .settings-section {
+  background: hsl(var(--dashboard-surface));
+}
+
+.polis-dashboard .overview-activity-grid > :first-child {
+  border-color: hsl(var(--primary) / 0.16);
+}
+
+.polis-dashboard .overview-activity-grid > :last-child {
+  background: hsl(var(--dashboard-surface) / 0.78);
+  box-shadow: none;
+}
+
+.polis-dashboard .dashboard-table-shell tbody tr {
+  transition-duration: 140ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.polis-dashboard .dashboard-table-shell tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.polis-dashboard button,
+.polis-dashboard a,
+.polis-dashboard [role="menuitem"],
+.polis-dashboard [role="option"] {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (min-width: 640px) {
   .polis-dashboard .page-shell {
     padding: 1.5rem;
@@ -256,6 +363,14 @@ body {
 @media (min-width: 1024px) {
   .polis-dashboard .page-shell {
     padding: 1.75rem 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .polis-dashboard .collector-metric-grid > :first-child,
+  .polis-dashboard .review-metric-grid > :first-child,
+  .polis-dashboard .report-metric-grid > :first-child {
+    grid-column: span 2 / span 2;
   }
 }
 
@@ -270,6 +385,24 @@ body {
 
   .polis-dashboard .dashboard-filter-bar {
     padding: 0.75rem;
+  }
+
+  .polis-dashboard .collector-metric-grid,
+  .polis-dashboard .review-metric-grid,
+  .polis-dashboard .report-metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .polis-dashboard .collector-metric-grid > :first-child,
+  .polis-dashboard .review-metric-grid > :first-child,
+  .polis-dashboard .report-metric-grid > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .polis-dashboard .collector-metric-grid > :last-child,
+  .polis-dashboard .review-metric-grid > :last-child,
+  .polis-dashboard .report-metric-grid > :last-child {
+    grid-column: 1 / -1;
   }
 }
 
