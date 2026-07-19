@@ -284,7 +284,7 @@ function ReportsPage() {
         actions={
           <Button
             size="sm"
-            className="gap-1.5"
+            className="dashboard-primary-action gap-1.5"
             onClick={() => { void handleExportPdf(); }}
             disabled={filteredTasks.length === 0 || exportingPdf}
           >

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { CircleAlert as AlertCircle, CheckCircle2, ClipboardCheck, Clock3, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CircleAlert as AlertCircle, CheckCircle2, ClipboardCheck, Clock3, ShieldCheck, Users } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -139,8 +139,8 @@ function OverviewPage() {
     <>
       <PageHeader title="Overview" description="Operations snapshot across all zones" />
       <div className="page-shell animate-fade-up">
-        <section aria-label="Operations metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Active Tasks" value={stats?.activeTasks ?? 0} icon={<ClipboardCheck className="h-4 w-4" />} />
+        <section aria-label="Operations metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[1.55fr_repeat(3,minmax(0,1fr))]">
+          <OperationsLead activeTasks={stats?.activeTasks ?? 0} />
           <Metric label="Verified Submissions" value={stats?.approvedSubmissions ?? 0} icon={<CheckCircle2 className="h-4 w-4" />} tone="success" />
           <Metric label="Field Collectors" value={stats?.totalCollectors ?? 0} icon={<Users className="h-4 w-4" />} />
           <Metric label="Completed Tasks" value={stats?.completedTasks ?? 0} icon={<Clock3 className="h-4 w-4" />} tone="warning" />
@@ -190,8 +190,8 @@ function OverviewLoading() {
     <>
       <PageHeader title="Overview" description="Operations snapshot across all zones" />
       <div className="page-shell">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-[116px] rounded-xl" />)}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.55fr_repeat(3,minmax(0,1fr))]">
+          {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-[120px] rounded-2xl" />)}
         </div>
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <Skeleton className="h-[320px] rounded-xl" />
@@ -199,6 +199,28 @@ function OverviewLoading() {
         </div>
       </div>
     </>
+  );
+}
+
+function OperationsLead({ activeTasks }: { activeTasks: number }) {
+  return (
+    <div className="overview-lead relative overflow-hidden rounded-2xl border border-primary/20 bg-primary p-5 text-primary-foreground shadow-[0_12px_26px_hsl(var(--primary)/0.18)]">
+      <div aria-hidden="true" className="absolute -right-8 -top-8 h-28 w-28 rounded-full border border-white/15" />
+      <div aria-hidden="true" className="absolute -bottom-12 right-10 h-28 w-28 rounded-full bg-white/[0.06]" />
+      <div className="relative flex h-full flex-col justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">Operations at a glance</p>
+            <p className="mt-2 text-3xl font-semibold tracking-[-0.045em] tabular-nums">{activeTasks}</p>
+            <p className="mt-1 text-sm text-white/78">Active tasks across the workspace</p>
+          </div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/12 ring-1 ring-inset ring-white/15"><ClipboardCheck className="h-5 w-5" /></span>
+        </div>
+        <Link to="/tasks" className="group focus-ring inline-flex w-fit items-center gap-1.5 rounded-lg bg-white/12 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/18">
+          Manage tasks <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </div>
   );
 }
 

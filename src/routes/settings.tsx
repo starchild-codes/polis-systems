@@ -24,37 +24,34 @@ function SettingsPage() {
         description="Organisation, zones, and notification preferences"
       />
 
-      <div className="page-shell max-w-4xl animate-fade-up">
-        <Section title="Organisation" description="Displayed on reports and collector messages.">
-          <Field label="Organisation name">
-            <Input defaultValue="Bengaluru Municipal Sanitation" />
-          </Field>
-          <Field label="Region">
-            <Input defaultValue="Bengaluru Urban, Karnataka" />
-          </Field>
-          <Field label="Support email">
-            <Input defaultValue="ops@polissystems.example.in" type="email" />
-          </Field>
-        </Section>
+      <div className="page-shell max-w-5xl animate-fade-up">
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.85fr)]">
+          <div className="space-y-5">
+            <Section title="Organisation" description="Displayed on reports and collector messages.">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Organisation name"><Input defaultValue="Bengaluru Municipal Sanitation" /></Field>
+                <Field label="Region"><Input defaultValue="Bengaluru Urban, Karnataka" /></Field>
+                <Field label="Support email" className="sm:col-span-2"><Input defaultValue="ops@polissystems.example.in" type="email" /></Field>
+              </div>
+            </Section>
 
-        <Section title="Zones" description="Operational zones covered by your teams.">
-          <div className="flex flex-wrap gap-2">
-            {["North", "South", "East", "West", "Central"].map((z) => (
-              <span
-                key={z}
-                className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-xs text-foreground"
-              >
-                {z}
-              </span>
-            ))}
+            <Section title="Zones" description="Operational zones currently available to your teams.">
+              <div className="flex flex-wrap gap-2">
+                {["North", "South", "East", "West", "Central"].map((z) => (
+                  <span key={z} className="inline-flex items-center rounded-lg border border-primary/12 bg-primary/[0.04] px-2.5 py-1.5 text-xs font-medium text-primary">
+                    {z}
+                  </span>
+                ))}
+              </div>
+            </Section>
           </div>
-        </Section>
 
-        <Section title="Notifications" description="Choose what triggers a notification.">
-          <ToggleRow label="New submissions" description="Notify when a collector submits proof-of-work." defaultChecked />
-          <ToggleRow label="Urgent tasks" description="Alert operators for urgent priority tasks." defaultChecked />
-          <ToggleRow label="Weekly digest" description="Every Monday morning summary." />
-        </Section>
+          <Section title="Notifications" description="Choose what triggers a notification.">
+            <ToggleRow label="New submissions" description="Notify when a collector submits proof-of-work." defaultChecked />
+            <ToggleRow label="Urgent tasks" description="Alert operators for urgent priority tasks." defaultChecked />
+            <ToggleRow label="Weekly digest" description="Every Monday morning summary." />
+          </Section>
+        </div>
 
         <div className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
           <Button variant="outline">Cancel</Button>
@@ -76,7 +73,8 @@ function Section({
 }) {
   return (
     <section className="surface-card overflow-hidden">
-      <div className="border-b border-border/80 bg-muted/20 px-5 py-4">
+      <div className="border-b border-border/80 bg-muted/[0.28] px-5 py-4">
+        <p className="section-label mb-1">Configuration</p>
         <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
         {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
@@ -85,9 +83,9 @@ function Section({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1.5">
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
     </div>
