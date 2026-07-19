@@ -40,6 +40,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlert as AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/collectors")({
+  validateSearch: (search: Record<string, unknown>): { query?: string } => ({
+    query: typeof search.query === "string" && search.query.trim() ? search.query : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Collectors — Polis Systems" },
@@ -94,6 +97,7 @@ function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
 }
 
 function CollectorsPage() {
+  const routeSearch = Route.useSearch();
   const collectors = useCollectorStore();
   const { loading, error } = useCollectorStoreState();
   const zones = useZones();
@@ -108,7 +112,7 @@ function CollectorsPage() {
   const { tasks } = useTaskStore();
   const submissions = useSubmissionStore();
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(routeSearch.query ?? "");
   const [status, setStatus] = useState<CollectorStatus | "all">("all");
   const [zone, setZone] = useState<Zone | "all">("all");
   const [type, setType] = useState<CollectorType | "all">("all");
@@ -121,6 +125,10 @@ function CollectorsPage() {
   const [confirm, setConfirm] = useState<{ id: string; name: string; action: "deactivate" | "suspend" } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Collector | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setQuery(routeSearch.query ?? "");
+  }, [routeSearch.query]);
 
   const counts = useMemo(() => computeCollectorCounts(collectors), [collectors]);
 
