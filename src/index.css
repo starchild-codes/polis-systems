@@ -206,6 +206,15 @@ body {
   border-radius: 999px;
   background: radial-gradient(circle, hsl(0 0% 100% / 0.12), transparent 67%);
   filter: blur(28px);
+  opacity: 0;
+}
+
+.brand-reveal--playing::after {
+  animation: brand-hero-glow-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 4.55s forwards;
+}
+
+.brand-reveal--complete::after {
+  opacity: 1;
 }
 
 .brand-reveal__grid {
@@ -217,6 +226,15 @@ body {
   background-size: 42px 42px;
   -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 72%);
   mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+  opacity: 0;
+}
+
+.brand-reveal--playing .brand-reveal__grid {
+  animation: brand-grid-in 1s ease-out 1.4s forwards;
+}
+
+.brand-reveal--complete .brand-reveal__grid {
+  opacity: 0.62;
 }
 
 @keyframes landing-section-reveal {
@@ -274,46 +292,53 @@ body {
   --entry-x: 0px;
   --entry-y: 12px;
   --piece-opacity: 0.2;
+  --formation-x: 0px;
+  --formation-y: 0px;
+  --formation-rotate: 0deg;
+  --formation-scale: 0.78;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: brand-piece-snap 0.72s cubic-bezier(0.2, 0.82, 0.28, 1.12) forwards;
+  animation:
+    brand-disorder-arrival 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    brand-system-form 0.9s cubic-bezier(0.22, 1, 0.36, 1) 3.45s forwards;
 }
 
-.brand-reveal__piece--route { --entry-x: -22px; --entry-y: 12px; animation-delay: 0.05s; }
-.brand-reveal__piece--dashboard { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.09s; }
-.brand-reveal__piece--task-left { --entry-x: -18px; --entry-y: 10px; --piece-opacity: 0.24; animation-delay: 0.15s; }
-.brand-reveal__piece--audit { --entry-x: -16px; --entry-y: 0px; animation-delay: 0.2s; }
-.brand-reveal__piece--check { --entry-x: -10px; --entry-y: 12px; animation-delay: 0.24s; }
-.brand-reveal__piece--collector { --entry-x: -18px; --entry-y: 14px; --piece-opacity: 0.24; animation-delay: 0.29s; }
-.brand-reveal__piece--workflow { --entry-x: 0px; --entry-y: -16px; animation-delay: 0.33s; }
-.brand-reveal__piece--pin { --entry-x: 14px; --entry-y: 12px; animation-delay: 0.36s; }
-.brand-reveal__piece--task-right { --entry-x: 18px; --entry-y: -8px; --piece-opacity: 0.24; animation-delay: 0.4s; }
-.brand-reveal__piece--assignment { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.43s; }
-.brand-reveal__piece--message { --entry-x: 16px; --entry-y: 8px; animation-delay: 0.46s; }
-.brand-reveal__piece--report { --entry-x: 16px; --entry-y: 14px; animation-delay: 0.49s; }
-.brand-reveal__piece--status { --entry-x: 16px; --entry-y: 0px; --piece-opacity: 0.26; animation-delay: 0.52s; }
-.brand-reveal__piece--metrics { --entry-x: 0px; --entry-y: 18px; animation-delay: 0.55s; }
-.brand-reveal__piece--movement { --entry-x: -12px; --entry-y: 12px; animation-delay: 0.58s; }
-.brand-reveal__piece--dots { --entry-x: 0px; --entry-y: 10px; animation-delay: 0.61s; }
-.brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -18px; --piece-opacity: 0.24; animation-delay: 0.64s; }
+.brand-reveal__piece--route { --entry-x: -74px; --entry-y: 34px; --formation-x: 104px; --formation-y: 62px; --formation-rotate: -8deg; animation-delay: 0.04s, 3.45s; }
+.brand-reveal__piece--dashboard { --entry-x: 8px; --entry-y: -70px; --formation-x: 54px; --formation-y: 69px; --formation-rotate: 7deg; animation-delay: 0.12s, 3.45s; }
+.brand-reveal__piece--task-left { --entry-x: -78px; --entry-y: 46px; --piece-opacity: 0.28; --formation-x: 112px; --formation-y: -77px; --formation-rotate: -10deg; animation-delay: 0.21s, 3.45s; }
+.brand-reveal__piece--audit { --entry-x: -64px; --entry-y: -12px; --formation-x: 148px; --formation-y: -18px; --formation-rotate: -6deg; animation-delay: 0.28s, 3.45s; }
+.brand-reveal__piece--check { --entry-x: -34px; --entry-y: 54px; --formation-x: 88px; --formation-y: 4px; animation-delay: 0.36s, 3.45s; }
+.brand-reveal__piece--collector { --entry-x: -78px; --entry-y: 62px; --piece-opacity: 0.28; --formation-x: 112px; --formation-y: -112px; --formation-rotate: -8deg; animation-delay: 0.44s, 3.45s; }
+.brand-reveal__piece--workflow { --entry-x: 6px; --entry-y: -72px; --formation-x: -136px; --formation-y: 67px; --formation-rotate: 6deg; animation-delay: 0.5s, 3.45s; }
+.brand-reveal__piece--pin { --entry-x: 62px; --entry-y: 44px; --formation-x: -104px; --formation-y: -48px; --formation-rotate: 8deg; animation-delay: 0.56s, 3.45s; }
+.brand-reveal__piece--task-right { --entry-x: 74px; --entry-y: -44px; --piece-opacity: 0.28; --formation-x: -118px; --formation-y: 74px; --formation-rotate: 8deg; animation-delay: 0.63s, 3.45s; }
+.brand-reveal__piece--assignment { --entry-x: 4px; --entry-y: 72px; --formation-x: 20px; --formation-y: -118px; animation-delay: 0.69s, 3.45s; }
+.brand-reveal__piece--message { --entry-x: 72px; --entry-y: 34px; --formation-x: -28px; --formation-y: -74px; --formation-rotate: 6deg; animation-delay: 0.75s, 3.45s; }
+.brand-reveal__piece--message-secondary { --entry-x: 62px; --entry-y: -38px; --formation-x: -72px; --formation-y: 4px; --formation-rotate: 4deg; animation-delay: 0.81s, 3.45s; }
+.brand-reveal__piece--report { --entry-x: 72px; --entry-y: 58px; --formation-x: -142px; --formation-y: -100px; --formation-rotate: 8deg; animation-delay: 0.88s, 3.45s; }
+.brand-reveal__piece--status { --entry-x: 72px; --entry-y: -4px; --piece-opacity: 0.3; --formation-x: -132px; --formation-y: 0px; --formation-rotate: 5deg; animation-delay: 0.94s, 3.45s; }
+.brand-reveal__piece--metrics { --entry-x: 0px; --entry-y: 72px; --formation-x: -56px; --formation-y: -120px; --formation-rotate: -3deg; animation-delay: 1s, 3.45s; }
+.brand-reveal__piece--movement { --entry-x: -58px; --entry-y: 50px; --formation-x: 84px; --formation-y: -98px; --formation-rotate: -8deg; animation-delay: 1.06s, 3.45s; }
+.brand-reveal__piece--dots { --entry-x: 0px; --entry-y: 46px; --formation-x: 0px; --formation-y: -4px; animation-delay: 1.12s, 3.45s; }
+.brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -72px; --piece-opacity: 0.28; --formation-x: -48px; --formation-y: 72px; --formation-rotate: 4deg; animation-delay: 1.18s, 3.45s; }
 
 .brand-reveal__draw {
   stroke-dasharray: 240;
   stroke-dashoffset: 240;
-  animation: brand-line-draw 1.35s ease-out 0.95s forwards;
+  animation: brand-line-draw 1.15s ease-out 1.42s forwards;
 }
 
 .brand-reveal__connector {
   stroke-dasharray: 90;
   stroke-dashoffset: 90;
-  animation: brand-line-draw 1.15s ease-out 1.05s forwards;
+  animation: brand-line-draw 0.9s ease-out 1.62s forwards;
 }
 
 .brand-reveal__trace {
   stroke-dasharray: 5 9;
   stroke-dashoffset: 100;
-  animation: brand-line-draw 1.4s linear 1s forwards;
+  animation: brand-line-draw 1.1s linear 1.54s forwards;
 }
 
 .brand-reveal__pulse {
@@ -321,23 +346,23 @@ body {
   opacity: 0.35;
   transform-box: fill-box;
   transform-origin: center;
-  animation: brand-pulse-once 0.65s ease-out 0.72s both;
+  animation: brand-pulse-once 0.52s ease-out 2.16s both;
 }
 
 .brand-reveal__status-old {
-  animation: brand-status-out 0.28s ease-in 1.08s forwards;
+  animation: brand-status-out 0.24s ease-in 2.2s forwards;
 }
 
 .brand-reveal__status-new {
   opacity: 0;
-  animation: brand-status-in 0.34s ease-out 1.16s forwards;
+  animation: brand-status-in 0.32s ease-out 2.36s forwards;
 }
 
 .brand-reveal__verified-chip {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: brand-chip-lock 0.4s cubic-bezier(0.22, 1, 0.36, 1) 1.28s forwards;
+  animation: brand-chip-lock 0.36s cubic-bezier(0.22, 1, 0.36, 1) 2.42s forwards;
 }
 
 .brand-reveal__identity {
@@ -368,7 +393,7 @@ body {
 }
 
 .brand-reveal--playing .brand-reveal__wordmark {
-  animation: brand-tracking-lock 0.55s cubic-bezier(0.22, 1, 0.36, 1) 2.65s both;
+  animation: brand-tracking-lock 0.5s cubic-bezier(0.22, 1, 0.36, 1) 5.25s both;
 }
 
 .brand-reveal__letter {
@@ -387,13 +412,13 @@ body {
   letter-spacing: 0.015em;
   opacity: 0;
   transform: translateY(8px);
-  animation: brand-identity-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 3.3s forwards;
+  animation: brand-identity-in 0.56s cubic-bezier(0.22, 1, 0.36, 1) 5.24s forwards;
 }
 
 .brand-reveal--complete .brand-reveal__piece {
   animation: none;
   opacity: var(--piece-opacity);
-  transform: none;
+  transform: translate(var(--formation-x), var(--formation-y)) rotate(var(--formation-rotate)) scale(var(--formation-scale));
 }
 
 .brand-reveal--complete .brand-reveal__draw,
@@ -421,10 +446,28 @@ body {
   transform: none;
 }
 
-@keyframes brand-piece-snap {
+@keyframes brand-disorder-arrival {
   0% { opacity: 0; transform: translate(var(--entry-x), var(--entry-y)) scale(0.88); }
-  72% { opacity: 0.42; transform: translate(-1px, -1px) scale(1.025); }
+  76% { opacity: 0.44; transform: translate(-2px, -1px) rotate(-1deg) scale(1.012); }
   100% { opacity: var(--piece-opacity); transform: none; }
+}
+
+@keyframes brand-system-form {
+  from { opacity: var(--piece-opacity); transform: none; }
+  to {
+    opacity: var(--piece-opacity);
+    transform: translate(var(--formation-x), var(--formation-y)) rotate(var(--formation-rotate)) scale(var(--formation-scale));
+  }
+}
+
+@keyframes brand-grid-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 0.62; transform: none; }
+}
+
+@keyframes brand-hero-glow-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes brand-line-draw {
@@ -479,9 +522,20 @@ body {
   .brand-reveal__piece--workflow,
   .brand-reveal__piece--report,
   .brand-reveal__piece--metrics,
+  .brand-reveal__piece--message-secondary,
   .brand-reveal__piece--dots {
     display: none;
   }
+
+  .brand-reveal__piece--task-left { --entry-x: -42px; --entry-y: 25px; }
+  .brand-reveal__piece--check { --entry-x: -20px; --entry-y: 28px; }
+  .brand-reveal__piece--collector { --entry-x: -42px; --entry-y: 34px; }
+  .brand-reveal__piece--pin { --entry-x: 34px; --entry-y: 25px; }
+  .brand-reveal__piece--assignment { --entry-x: 2px; --entry-y: 38px; }
+  .brand-reveal__piece--message { --entry-x: 39px; --entry-y: 20px; }
+  .brand-reveal__piece--status { --entry-x: 39px; --entry-y: -2px; }
+  .brand-reveal__piece--movement { --entry-x: -32px; --entry-y: 28px; }
+  .brand-reveal__piece--proof { --entry-x: 0px; --entry-y: -40px; }
 
   .brand-reveal__wordmark {
     --brand-tracking: 0.035em;

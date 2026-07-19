@@ -24,8 +24,8 @@ export function LandingBrandReveal() {
         <g className="brand-reveal__piece brand-reveal__piece--task-left">
           <rect x="42" y="246" width="132" height="78" rx="10" />
           <circle className="brand-reveal__accent" cx="59" cy="266" r="5" />
-          <text className="brand-reveal__label brand-reveal__status-old" x="71" y="269">ASSIGNED</text>
-          <text className="brand-reveal__label brand-reveal__status-new" x="71" y="269">IN PROGRESS</text>
+          <text className="brand-reveal__label brand-reveal__status-old" x="71" y="269">PENDING</text>
+          <text className="brand-reveal__label brand-reveal__status-new" x="71" y="269">ASSIGNED</text>
           <path d="M57 286H153M57 300H126" />
           <rect x="56" y="307" width="37" height="10" rx="5" />
           <text className="brand-reveal__micro-label" x="63" y="315">HIGH</text>
@@ -55,6 +55,12 @@ export function LandingBrandReveal() {
         <g className="brand-reveal__piece brand-reveal__piece--message">
           <path d="M375 292H427C438 292 447 283 447 272V248C447 237 438 228 427 228H389C378 228 369 237 369 248V306L385 292H375Z" />
           <path d="M389 250H427M389 268H416" />
+        </g>
+
+        <g className="brand-reveal__piece brand-reveal__piece--message-secondary">
+          <path d="M398 178H442C451 178 458 171 458 162V145C458 136 451 129 442 129H408C399 129 392 136 392 145V188L405 178H398Z" />
+          <path d="M408 147H441M408 160H431" />
+          <circle className="brand-reveal__accent" cx="441" cy="160" r="2.5" />
         </g>
 
         <g className="brand-reveal__piece brand-reveal__piece--proof">
@@ -106,7 +112,7 @@ export function LandingBrandReveal() {
 
         <g className="brand-reveal__piece brand-reveal__piece--status">
           <rect x="493" y="174" width="76" height="20" rx="10" />
-          <text className="brand-reveal__micro-label" x="506" y="187">SUBMITTED</text>
+          <text className="brand-reveal__micro-label brand-reveal__status-old" x="506" y="187">UNVERIFIED</text>
           <g className="brand-reveal__verified-chip">
             <rect className="brand-reveal__status-verified" x="507" y="201" width="62" height="20" rx="10" />
             <path d="M516 211L520 215L526 207" />
@@ -157,7 +163,7 @@ export function LandingBrandReveal() {
               aria-hidden="true"
               key={`${character}-${index}`}
               className="brand-reveal__letter"
-              style={{ animationDelay: `${2.05 + index * 0.06}s` }}
+              style={{ animationDelay: `${4.7 + index * 0.055}s` }}
             >
               {character === " " ? "\u00A0" : character}
             </span>
