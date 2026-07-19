@@ -53,7 +53,7 @@ html {
 }
 
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Geist", system-ui, sans-serif;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   -webkit-font-smoothing: antialiased;
@@ -190,6 +190,8 @@ body {
 }
 
 .brand-reveal {
+  /* The animated identity intentionally retains its original type treatment. */
+  font-family: "Inter", system-ui, sans-serif;
   position: relative;
   isolation: isolate;
   min-height: clamp(28rem, 72vh, 48rem);
