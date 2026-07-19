@@ -300,7 +300,7 @@ function ReportsPage() {
           </div>
         )}
         {/* Filters */}
-        <section className="surface-card overflow-hidden">
+        <section className="report-filter-panel surface-card overflow-hidden">
           <div className="flex items-center gap-2 border-b border-border/80 bg-muted/20 px-5 py-3.5">
             <span className="icon-tile h-8 w-8"><Filter className="h-4 w-4" /></span>
             <h2 className="text-sm font-semibold text-foreground">Filters</h2>
@@ -462,7 +462,7 @@ function ReportsPage() {
         </section>
 
         {/* Summary metrics */}
-        <section aria-label="Report metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Report metrics" className="report-metric-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <Kpi label="Open Tasks" value={openTasksCount} icon={<Clock className="h-4 w-4" />} />
           <Kpi
             label="Awaiting Review"
@@ -484,7 +484,7 @@ function ReportsPage() {
         </section>
 
         {/* Tasks by Status + Tasks by Zone */}
-        <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <section className="report-visual-grid grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           {/* Tasks by Status */}
           <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">
@@ -559,7 +559,7 @@ function ReportsPage() {
         </section>
 
         {/* Waste Quantity by Type + Cleanup Activity Over Time */}
-        <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <section className="report-visual-grid grid grid-cols-1 gap-4 lg:grid-cols-[0.85fr_1.15fr]">
           {/* Waste Quantity by Type */}
           <div className="surface-card overflow-hidden">
             <div className="border-b border-border px-4 py-2.5">

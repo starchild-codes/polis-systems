@@ -249,7 +249,7 @@ function ReviewPage() {
 
       <div className="page-shell animate-fade-up">
         {/* Summary metrics */}
-        <section aria-label="Review metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Review metrics" className="review-metric-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard label="Awaiting Review" value={counts.pending} icon={<Clock3 className="h-4 w-4" />} tone="warning" />
           <MetricCard label="Approved" value={counts.approved} icon={<CheckCircle2 className="h-4 w-4" />} tone="success" />
           <MetricCard label="Rejected" value={counts.rejected} icon={<XCircle className="h-4 w-4" />} tone="destructive" />

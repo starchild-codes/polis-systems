@@ -146,7 +146,7 @@ function OverviewPage() {
           <Metric label="Completed Tasks" value={stats?.completedTasks ?? 0} icon={<Clock3 className="h-4 w-4" />} tone="warning" />
         </section>
 
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <section className="overview-activity-grid grid grid-cols-1 gap-5 xl:grid-cols-[1.18fr_0.82fr]">
           <ActivityCard title="Recent Tasks" viewAllTo="/tasks">
             {recentTasks.length === 0 ? (
               <EmptyState icon={<ClipboardCheck className="h-5 w-5" />} title="No tasks yet" description="New cleanup tasks will appear here." />
@@ -228,7 +228,10 @@ function ActivityCard({ title, viewAllTo, children }: { title: string; viewAllTo
   return (
     <div className="surface-card overflow-hidden">
       <div className="flex items-center justify-between border-b border-border/80 px-5 py-4">
-        <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+        <h2 className="flex items-center gap-2 text-base font-semibold tracking-[-0.015em] text-foreground">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full border border-primary/35 bg-primary/10" />
+          {title}
+        </h2>
         <Link to={viewAllTo} className="focus-ring rounded-md px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 hover:text-primary-dark">View all</Link>
       </div>
       <div className="divide-y divide-border">{children}</div>

@@ -234,7 +234,7 @@ function TasksPage() {
 
       <div className="page-shell animate-fade-up">
         {/* Summary strip */}
-        <div className="flex flex-wrap gap-2" aria-label="Task status summary">
+        <div className="task-status-rail flex flex-wrap gap-1.5 border-b border-border/80 pb-3" aria-label="Task status summary">
           {SUMMARY_CHIPS.map((chip) => {
             const count = tasks.filter((t) => chip.match(t, isTaskOverdue(t))).length;
             const active = activeChip === chip.key;
@@ -242,15 +242,15 @@ function TasksPage() {
               <button
                 key={chip.key}
                 onClick={() => setActiveChip(active ? "all" : chip.key)}
-                className={`focus-ring flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm transition-[color,background-color,border-color,box-shadow] ${
+                className={`focus-ring flex min-h-9 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,transform] ${
                   active
-                    ? "border-primary/30 bg-primary/10 text-primary-dark shadow-primary/5"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_5px_14px_hsl(var(--primary)/0.16)]"
+                    : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
                 }`}
               >
                 {chip.key === "overdue" && <AlertTriangle className="h-3 w-3" />}
                 {chip.label}
-                <span className={`inline-flex min-w-5 justify-center rounded-full px-1.5 py-0.5 tabular-nums ${active ? "bg-primary/10 text-primary-dark" : "bg-muted text-foreground"}`}>{count}</span>
+                <span className={`inline-flex min-w-5 justify-center rounded-md px-1.5 py-0.5 tabular-nums ${active ? "bg-white/15 text-white" : "bg-muted text-foreground"}`}>{count}</span>
               </button>
             );
           })}
