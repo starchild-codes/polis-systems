@@ -225,54 +225,26 @@ function renderActions(
   },
 ) {
   const { openAssignDialog, setCancelOpen, onAction } = handlers;
-  switch (task.status) {
-    case "open":
-      return (
-        <>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onAction("edit")}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
-          <Button size="sm" onClick={() => openAssignDialog("assign")}>Assign</Button>
-          <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
-        </>
-      );
-    case "assigned":
-      return (
-        <>
-          <Button variant="outline" size="sm" onClick={() => openAssignDialog("reassign")}>Reassign</Button>
-          <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
-        </>
-      );
-    case "accepted":
-    case "in_progress":
-      return (
-        <div className="ml-auto flex gap-2"><Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button><Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button></div>
-      );
-    case "submitted":
-      return (
-        <Button asChild size="sm" className="ml-auto">
-          <Link to="/review" search={{ taskId: task.id }}>Review submission</Link>
-        </Button>
-      );
-    case "approved":
-      return (
-        <Button size="sm" className="ml-auto" onClick={() => onAction("export")}>Export record</Button>
-      );
-    case "declined":
-      return (
-        <>
-          <Button size="sm" onClick={() => openAssignDialog("reassign")}>Reassign</Button>
-          <Button variant="outline" size="sm" className="ml-auto text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
-        </>
-      );
-    case "rejected":
-      return (
-        <>
-          <Button size="sm" onClick={() => onAction("resubmit")}>Request resubmission</Button>
-          <Button variant="outline" size="sm" className="ml-auto text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
-        </>
-      );
-    case "canceled":
-      return <span className="text-xs text-muted-foreground">View only — this task is canceled.</span>;
-    default:
-      return null;
+  if (task.status === "submitted") {
+    return <Button asChild size="sm" className="ml-auto"><Link to="/review" search={{ taskId: task.id }}>Review submission</Link></Button>;
   }
+  if (task.status === "approved") {
+    return <Button size="sm" className="ml-auto" onClick={() => onAction("export")}>Export record</Button>;
+  }
+  if (task.status === "canceled") {
+    return <span className="text-xs text-muted-foreground">View only — this task is canceled.</span>;
+  }
+
+  const canDelete = ["open", "assigned", "accepted", "in_progress"].includes(task.status);
+  return (
+    <>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onAction("edit")}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+      <Button size="sm" onClick={() => openAssignDialog(task.assignee ? "reassign" : "assign")}>{task.assignee ? "Reassign" : "Assign collector"}</Button>
+      {task.status === "rejected" && <Button variant="outline" size="sm" onClick={() => onAction("resubmit")}>Request resubmission</Button>}
+      <div className="ml-auto flex gap-2">
+        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>
+        {canDelete && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => onAction("delete")}><Trash2 className="h-3.5 w-3.5" /> Delete</Button>}
+      </div>
+    </>
+  );
 }

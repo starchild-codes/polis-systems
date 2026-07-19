@@ -190,7 +190,7 @@ export function CreateTaskSheet({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Hotspot type" error={errors.hotspotType} required>
                 <Select value={values.hotspotType} onValueChange={(v) => set("hotspotType", v as HotspotType)}>
-                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={values.hotspotType || "Select type"} /></SelectTrigger>
                   <SelectContent>
                     {HOTSPOT_TYPES.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                   </SelectContent>
@@ -198,7 +198,7 @@ export function CreateTaskSheet({
               </Field>
               <Field label="Priority" error={errors.priority} required>
                 <Select value={values.priority} onValueChange={(v) => set("priority", v as Priority)}>
-                  <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={values.priority ? values.priority[0].toUpperCase() + values.priority.slice(1) : "Select priority"} /></SelectTrigger>
                   <SelectContent>
                     {PRIORITIES.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
                   </SelectContent>
@@ -208,7 +208,7 @@ export function CreateTaskSheet({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Waste type">
                 <Select value={values.wasteType} onValueChange={(v) => set("wasteType", v as WasteType)}>
-                  <SelectTrigger><SelectValue placeholder="Select waste type" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={values.wasteType || "Select waste type"} /></SelectTrigger>
                   <SelectContent>
                     {WASTE_TYPES.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
                   </SelectContent>
@@ -224,7 +224,7 @@ export function CreateTaskSheet({
             <h3 className="section-label">Assignment &amp; timing</h3>
             <Field label="Assigned collector" hint="Leave blank to save as a draft — you can assign later.">
               <Select value={values.assignee || "__none"} onValueChange={(v) => set("assignee", v === "__none" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="No collector (draft)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={values.assignee || "No collector (draft)"} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none">No collector (draft)</SelectItem>
                   {collectorOptions.length === 0 ? (
@@ -239,7 +239,7 @@ export function CreateTaskSheet({
               </Field>
               <Field label="Zone" error={errors.zone} required>
                 <Select value={values.zone} onValueChange={(v) => set("zone", v as Zone)}>
-                  <SelectTrigger><SelectValue placeholder="Select zone" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={values.zone || "Select zone"} /></SelectTrigger>
                   <SelectContent>
                     {zoneNames.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
                   </SelectContent>

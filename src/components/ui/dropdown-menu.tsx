@@ -91,7 +91,10 @@ export function DropdownMenuContent({
   align = "start", className, children,
 }: { align?: "start" | "end"; className?: string; children: ReactNode }) {
   const { open, setOpen, triggerRef, contentRef, focusFirstRef } = useDropdown();
-  const [position, setPosition] = useState<CSSProperties>({ visibility: "hidden" });
+  // Measure the menu as a fixed, shrink-to-fit surface. Measuring it as a
+  // normal block makes an un-sized menu span the body and clamps right-aligned
+  // menus to the left viewport edge.
+  const [position, setPosition] = useState<CSSProperties>({ position: "fixed", top: 0, left: 0, visibility: "hidden" });
 
   useLayoutEffect(() => {
     if (!open) return;
