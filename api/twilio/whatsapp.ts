@@ -56,6 +56,7 @@ export default async function handler(
       accountSid: config.twilioAccountSid,
       authToken: config.twilioAuthToken,
       maximumBytes: config.whatsappMediaMaxBytes,
+      diagnosticLog: (entry) => console.info("twilio_whatsapp_media", entry),
     });
     const result = await handleWhatsAppWebhook(
       {

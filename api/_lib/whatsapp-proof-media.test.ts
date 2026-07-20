@@ -3,9 +3,12 @@ import { describe, it } from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildProofObjectPath,
+  isTrustedTwilioMediaHost,
   isTrustedTwilioMediaUrl,
+  MAX_TWILIO_MEDIA_REDIRECTS,
   SupabaseTwilioProofMediaService,
   TASK_PROOF_BUCKET,
+  type TwilioMediaDiagnostic,
 } from "./whatsapp-proof-media.js";
 import type { WhatsAppProofContext } from "./whatsapp-proof.js";
 
@@ -58,13 +61,99 @@ function imageResponse(
 }
 
 describe("secure Twilio proof media", () => {
-  it("allows only trusted Twilio-controlled HTTPS media hosts", () => {
+  it("allows only the Twilio API and exact secured Messaging CDN hosts over HTTPS", () => {
+    assert.equal(isTrustedTwilioMediaHost("api.twilio.com"), true);
+    assert.equal(isTrustedTwilioMediaHost("api.us1.twilio.com"), true);
+    assert.equal(isTrustedTwilioMediaHost("mms.twiliocdn.com"), true);
     assert.equal(isTrustedTwilioMediaUrl("https://api.twilio.com/2010-04-01/media"), true);
     assert.equal(isTrustedTwilioMediaUrl("https://api.us1.twilio.com/media"), true);
-    assert.equal(isTrustedTwilioMediaUrl("https://media.twiliocdn.com/media"), true);
+    assert.equal(isTrustedTwilioMediaUrl("https://mms.twiliocdn.com/media"), true);
     assert.equal(isTrustedTwilioMediaUrl("http://api.twilio.com/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("http://mms.twiliocdn.com/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://example.com/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://localhost/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://10.0.0.1/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://172.16.0.1/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://192.168.1.1/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://169.254.169.254/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://[::1]/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://twilio.example.com/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://mms.twiliocdn.com.example/media"), false);
+    assert.equal(isTrustedTwilioMediaUrl("https://mms-twiliocdn.com/media"), false);
     assert.equal(isTrustedTwilioMediaUrl("https://api.twilio.com.attacker.example/media"), false);
     assert.equal(isTrustedTwilioMediaUrl("https://127.0.0.1/media"), false);
+  });
+
+  it("accepts the secured Twilio CDN redirect and strips Basic Auth across hosts", async () => {
+    const storage = createSupabase();
+    const calls: Array<{ url: string; authorization: string; redirect: string }> = [];
+    const diagnostics: TwilioMediaDiagnostic[] = [];
+    const fetchImplementation = (async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push({
+        url: url.toString(),
+        authorization: new Headers(init?.headers).get("authorization") || "",
+        redirect: init?.redirect || "",
+      });
+      if (calls.length === 1) {
+        return imageResponse(new Uint8Array(), "image/jpeg", 302, {
+          location: "https://mms.twiliocdn.com/secured-media?token=signed-secret",
+        });
+      }
+      return imageResponse();
+    }) as typeof fetch;
+    const service = new SupabaseTwilioProofMediaService(storage.supabase, {
+      accountSid: "AC-test",
+      authToken: "auth-test",
+      fetchImplementation,
+      diagnosticLog: (entry) => diagnostics.push(entry),
+      randomId: () => "55555555-5555-4555-8555-555555555555",
+    });
+
+    await service.storeImage({
+      context: proofContext,
+      kind: "before",
+      mediaUrl: "https://api.twilio.com/media/ME1",
+      declaredContentType: "image/jpeg",
+    });
+
+    assert.equal(calls.length, 2);
+    assert.match(calls[0]?.authorization || "", /^Basic /u);
+    assert.equal(calls[1]?.authorization, "");
+    assert.ok(calls.every((call) => call.redirect === "manual"));
+    assert.deepEqual(diagnostics, [{
+      code: "media_redirect_accepted",
+      sourceHost: "api.twilio.com",
+      targetHost: "mms.twiliocdn.com",
+      redirectCount: 1,
+    }]);
+    assert.doesNotMatch(JSON.stringify(diagnostics), /secured-media|signed-secret|token=/u);
+    assert.equal(storage.uploads.length, 1);
+  });
+
+  it("retains Basic Auth only while redirects stay on trusted Twilio API hosts", async () => {
+    const storage = createSupabase();
+    const authorizations: string[] = [];
+    const fetchImplementation = (async (_url: string | URL | Request, init?: RequestInit) => {
+      authorizations.push(new Headers(init?.headers).get("authorization") || "");
+      return authorizations.length === 1
+        ? imageResponse(new Uint8Array(), "image/jpeg", 307, { location: "/media/ME1/content" })
+        : imageResponse();
+    }) as typeof fetch;
+    const service = new SupabaseTwilioProofMediaService(storage.supabase, {
+      accountSid: "AC-test",
+      authToken: "auth-test",
+      fetchImplementation,
+    });
+
+    await service.storeImage({
+      context: proofContext,
+      kind: "before",
+      mediaUrl: "https://api.twilio.com/media/ME1",
+      declaredContentType: "image/jpeg",
+    });
+
+    assert.equal(authorizations.length, 2);
+    assert.ok(authorizations.every((authorization) => /^Basic /u.test(authorization)));
   });
 
   it("uses Twilio Basic authentication, validates MIME, and uploads privately scoped bytes", async () => {
@@ -173,6 +262,71 @@ describe("secure Twilio proof media", () => {
       /unsafe_media_redirect/u,
     );
     assert.equal(calls, 1);
+  });
+
+  it("rejects HTTP, local, private, misleading, and lookalike redirect targets", async () => {
+    const unsafeTargets = [
+      "http://mms.twiliocdn.com/proof.jpg",
+      "https://localhost/proof.jpg",
+      "https://127.0.0.1/proof.jpg",
+      "https://10.0.0.1/proof.jpg",
+      "https://twilio.example.com/proof.jpg",
+      "https://mms.twiliocdn.com.example/proof.jpg",
+    ];
+
+    for (const location of unsafeTargets) {
+      const storage = createSupabase();
+      let calls = 0;
+      const service = new SupabaseTwilioProofMediaService(storage.supabase, {
+        accountSid: "AC-test",
+        authToken: "auth-test",
+        fetchImplementation: (async () => {
+          calls += 1;
+          return imageResponse(new Uint8Array(), "image/jpeg", 302, { location });
+        }) as typeof fetch,
+      });
+      await assert.rejects(
+        service.storeImage({
+          context: proofContext,
+          kind: "before",
+          mediaUrl: "https://api.twilio.com/media/ME1",
+          declaredContentType: "image/jpeg",
+        }),
+        /unsafe_media_redirect/u,
+      );
+      assert.equal(calls, 1);
+      assert.equal(storage.uploads.length, 0);
+    }
+  });
+
+  it("enforces the redirect-count limit while revalidating every hop", async () => {
+    const storage = createSupabase();
+    const diagnostics: TwilioMediaDiagnostic[] = [];
+    let calls = 0;
+    const service = new SupabaseTwilioProofMediaService(storage.supabase, {
+      accountSid: "AC-test",
+      authToken: "auth-test",
+      diagnosticLog: (entry) => diagnostics.push(entry),
+      fetchImplementation: (async () => {
+        calls += 1;
+        return imageResponse(new Uint8Array(), "image/jpeg", 302, {
+          location: `https://mms.twiliocdn.com/hop-${calls}`,
+        });
+      }) as typeof fetch,
+    });
+
+    await assert.rejects(
+      service.storeImage({
+        context: proofContext,
+        kind: "before",
+        mediaUrl: "https://api.twilio.com/media/ME1",
+        declaredContentType: "image/jpeg",
+      }),
+      /unsafe_media_redirect/u,
+    );
+    assert.equal(calls, MAX_TWILIO_MEDIA_REDIRECTS + 1);
+    assert.equal(diagnostics.at(-1)?.code, "media_redirect_limit");
+    assert.equal(storage.uploads.length, 0);
   });
 
   it("aborts a timed-out fetch", async () => {

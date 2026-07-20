@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { isIP } from "node:net";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   WhatsAppProofContext,
@@ -8,6 +9,10 @@ import type {
 export const TASK_PROOF_BUCKET = "task-proof";
 export const DEFAULT_WHATSAPP_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
 export const TWILIO_MEDIA_FETCH_TIMEOUT_MS = 8_000;
+export const MAX_TWILIO_MEDIA_REDIRECTS = 2;
+
+const TWILIO_SECURE_MESSAGING_MEDIA_HOST = "mms.twiliocdn.com";
+const TWILIO_REGIONAL_API_HOST = /^api\.[a-z]{2}\d\.twilio\.com$/u;
 
 const MIME_EXTENSIONS: Readonly<Record<string, string>> = {
   "image/jpeg": "jpg",
@@ -26,6 +31,14 @@ export interface TwilioProofMediaOptions {
   fetchImplementation?: FetchImplementation;
   randomId?: () => string;
   timeoutMs?: number;
+  diagnosticLog?: (entry: TwilioMediaDiagnostic) => void;
+}
+
+export interface TwilioMediaDiagnostic {
+  code: "media_redirect_accepted" | "media_redirect_rejected" | "media_redirect_limit";
+  sourceHost: string;
+  targetHost?: string;
+  redirectCount: number;
 }
 
 function normalizeMimeType(value: string | null): string {
@@ -33,17 +46,47 @@ function normalizeMimeType(value: string | null): string {
   return normalized === "image/jpg" ? "image/jpeg" : normalized;
 }
 
+function normalizeHostname(value: string): string | null {
+  const hostname = value.trim().toLowerCase();
+  if (!hostname || hostname.endsWith(".")) return null;
+  const address = hostname.startsWith("[") && hostname.endsWith("]")
+    ? hostname.slice(1, -1)
+    : hostname;
+  if (isIP(address) !== 0 || hostname === "localhost" || hostname.endsWith(".localhost")) {
+    return null;
+  }
+  return hostname;
+}
+
+function isTrustedTwilioApiHost(hostname: string): boolean {
+  const normalized = normalizeHostname(hostname);
+  return normalized === "api.twilio.com"
+    || (normalized !== null && TWILIO_REGIONAL_API_HOST.test(normalized));
+}
+
+export function isTrustedTwilioMediaHost(hostname: string): boolean {
+  const normalized = normalizeHostname(hostname);
+  return normalized !== null && (
+    isTrustedTwilioApiHost(normalized)
+    || normalized === TWILIO_SECURE_MESSAGING_MEDIA_HOST
+  );
+}
+
 export function isTrustedTwilioMediaUrl(value: string): boolean {
   try {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.username || url.password) return false;
-    const hostname = url.hostname.toLowerCase();
-    return hostname === "api.twilio.com"
-      || /^api\.[a-z0-9-]+\.twilio\.com$/u.test(hostname)
-      || hostname === "media.twiliocdn.com"
-      || /^[a-z0-9-]+\.media\.twiliocdn\.com$/u.test(hostname);
+    return isTrustedTwilioMediaHost(url.hostname);
   } catch {
     return false;
+  }
+}
+
+function safeHostname(value: string): string | null {
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return null;
   }
 }
 
@@ -54,8 +97,18 @@ async function fetchTrustedMedia(
   const fetchImplementation = options.fetchImplementation || fetch;
   let currentUrl = initialUrl;
 
-  for (let redirectCount = 0; redirectCount <= 2; redirectCount += 1) {
+  for (let redirectCount = 0; redirectCount <= MAX_TWILIO_MEDIA_REDIRECTS; redirectCount += 1) {
     if (!isTrustedTwilioMediaUrl(currentUrl)) throw new Error("untrusted_media_url");
+
+    const current = new URL(currentUrl);
+    const headers: Record<string, string> = {
+      Accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
+    };
+    // The API media resource requires account credentials. Twilio's secured CDN
+    // redirect is short-lived and signed, so credentials must not cross hosts.
+    if (isTrustedTwilioApiHost(current.hostname)) {
+      headers.Authorization = `Basic ${Buffer.from(`${options.accountSid}:${options.authToken}`).toString("base64")}`;
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -66,10 +119,7 @@ async function fetchTrustedMedia(
     try {
       response = await fetchImplementation(currentUrl, {
         method: "GET",
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${options.accountSid}:${options.authToken}`).toString("base64")}`,
-          Accept: "image/jpeg,image/png,image/webp,image/heic,image/heif",
-        },
+        headers,
         redirect: "manual",
         signal: controller.signal,
       });
@@ -84,9 +134,50 @@ async function fetchTrustedMedia(
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
-      if (!location || redirectCount === 2) throw new Error("unsafe_media_redirect");
-      const redirectedUrl = new URL(location, currentUrl).toString();
-      if (!isTrustedTwilioMediaUrl(redirectedUrl)) throw new Error("unsafe_media_redirect");
+      if (!location) {
+        options.diagnosticLog?.({
+          code: "media_redirect_rejected",
+          sourceHost: current.hostname,
+          redirectCount: redirectCount + 1,
+        });
+        throw new Error("unsafe_media_redirect");
+      }
+      let redirectedUrl: string;
+      try {
+        redirectedUrl = new URL(location, currentUrl).toString();
+      } catch {
+        options.diagnosticLog?.({
+          code: "media_redirect_rejected",
+          sourceHost: current.hostname,
+          redirectCount: redirectCount + 1,
+        });
+        throw new Error("unsafe_media_redirect");
+      }
+      const targetHost = safeHostname(redirectedUrl) || undefined;
+      if (!isTrustedTwilioMediaUrl(redirectedUrl)) {
+        options.diagnosticLog?.({
+          code: "media_redirect_rejected",
+          sourceHost: current.hostname,
+          targetHost,
+          redirectCount: redirectCount + 1,
+        });
+        throw new Error("unsafe_media_redirect");
+      }
+      if (redirectCount === MAX_TWILIO_MEDIA_REDIRECTS) {
+        options.diagnosticLog?.({
+          code: "media_redirect_limit",
+          sourceHost: current.hostname,
+          targetHost,
+          redirectCount,
+        });
+        throw new Error("unsafe_media_redirect");
+      }
+      options.diagnosticLog?.({
+        code: "media_redirect_accepted",
+        sourceHost: current.hostname,
+        targetHost,
+        redirectCount: redirectCount + 1,
+      });
       currentUrl = redirectedUrl;
       continue;
     }
