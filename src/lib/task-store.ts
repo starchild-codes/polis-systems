@@ -15,6 +15,7 @@ import {
 } from "@/lib/supabase-data";
 import { getCollectors } from "@/lib/collector-store";
 import { notifyOperationalDataChanged } from "@/lib/operational-events";
+import { statusAfterCollectorChange } from "@/lib/task-assignment-state";
 import type {
   Task,
   TaskEvent,
@@ -184,7 +185,7 @@ export const taskStoreActions = {
 
       const assignmentChanged = patch.assignee !== (currentTask?.assignee ?? "");
       if (assignmentChanged && patch.assignee) {
-        if (!currentTask || ["open", "declined", "rejected"].includes(currentTask.status)) dbPatch.status = "assigned";
+        dbPatch.status = statusAfterCollectorChange(currentTask?.status);
         assignmentEvent = currentTask?.assignee
           ? `Reassigned from ${currentTask.assignee} to ${patch.assignee}`
           : `Assigned to ${patch.assignee}`;
@@ -202,10 +203,9 @@ export const taskStoreActions = {
     const collectorId = resolveAssigneeId(collectorName);
     if (!collectorId) return;
     const task = state.tasks.find((t) => t.id === taskId);
-    const nextStatus: string = task?.status === "open" ? "assigned" : task?.status ?? "assigned";
     await updateTask(taskId, {
       collector_id: collectorId,
-      status: taskStatusToDb(nextStatus),
+      status: taskStatusToDb(statusAfterCollectorChange(task?.status)),
     });
     await insertTaskEvent(taskId, "assigned", `Assigned to ${collectorName}`);
     await this.refresh();
@@ -217,10 +217,12 @@ export const taskStoreActions = {
     if (!collectorId) return;
     const task = state.tasks.find((t) => t.id === taskId);
     const previous = task?.assignee;
-    const nextStatus: string = task?.status === "declined" ? "assigned" : task?.status ?? "assigned";
+    if (previous === collectorName) {
+      throw new Error("Choose a different collector before reassigning this task.");
+    }
     await updateTask(taskId, {
       collector_id: collectorId,
-      status: taskStatusToDb(nextStatus),
+      status: taskStatusToDb(statusAfterCollectorChange(task?.status)),
     });
     await insertTaskEvent(
       taskId,

@@ -150,6 +150,23 @@ describe("WhatsApp outbound task assignment", () => {
     assert.equal(response.status, 404);
   });
 
+  it("reports an already accepted assignment accurately without sending again", async () => {
+    const send = tracked(async (_message: Parameters<TaskAssignmentSender["send"]>[0]) => ({
+      messageSid: "should-not-send",
+    }));
+    const response = await execute(
+      createStore({ getTask: async () => ({ ...task, status: "accepted" }) }),
+      createSender(send),
+    );
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(JSON.parse(response.body), {
+      error: "The collector has already accepted this assignment. Refresh the task to see its current status.",
+      code: "task_not_assignable",
+    });
+    assert.equal(send.calls.length, 0);
+  });
+
   it("returns 404 when the assigned collector does not exist", async () => {
     const response = await execute(createStore({ getCollector: async () => null }));
     assert.equal(response.status, 404);

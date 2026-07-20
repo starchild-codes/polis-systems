@@ -235,7 +235,12 @@ export async function handleTaskAssignment(
     }
 
     if (task.status !== "assigned") {
-      return jsonResponse(409, { error: "Only assigned tasks can be sent through WhatsApp." });
+      const message = task.status === "accepted"
+        ? "The collector has already accepted this assignment. Refresh the task to see its current status."
+        : task.status === "in_progress"
+          ? "This task is already in progress and cannot be sent as a new assignment."
+          : "This task is not currently ready for a WhatsApp assignment. Reassign its collector and try again.";
+      return jsonResponse(409, { error: message, code: "task_not_assignable" });
     }
     if (!task.collectorId) {
       return jsonResponse(422, { error: "Assign a collector before sending through WhatsApp." });

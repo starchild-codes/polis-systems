@@ -189,6 +189,12 @@ function TasksPage() {
             toast.success("WhatsApp assignment sent", { description: `${selectedTask.assignee ?? "The collector"} can reply ACCEPT or DECLINE.` });
           }
           await taskStoreActions.refresh();
+        } catch (error) {
+          // WhatsApp replies can advance the server-side task while this drawer
+          // is open. Refetch before surfacing an eligibility error so the UI no
+          // longer presents a stale "Assigned" state or resend action.
+          await taskStoreActions.refresh().catch(() => undefined);
+          throw error;
         } finally {
           setWhatsappSendingTaskId(null);
         }
