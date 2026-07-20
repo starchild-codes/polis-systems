@@ -1,0 +1,31 @@
+# Pre-baseline migration archive
+
+These 12 migrations are the preserved historical chain that existed before the
+2026-07-20 production-schema baseline. They are intentionally outside
+`supabase/migrations/` because the production migration-history table is empty,
+the historical chain is not replayable from an empty database, and parts of it
+contain production-specific data backfills.
+
+Do not delete, edit, or move these files back into the active migration path.
+The active chain begins with
+`20260720110000_production_schema_baseline.sql`, followed by
+`20260720120000_add_whatsapp_webhook_events.sql`.
+
+## SHA-256 checksums
+
+The checksums were captured before the move and verified again afterward.
+
+```text
+c956927b8d860121be1f057459c2690dbaad89426d0da8f518194310ec90ca5b  20260714171829_initial_schema.sql
+21ef315a5bb915ae67532fd41b4769d8e75523a531397ad87dfc83edcc84092e  20260715155331_d116f568-9746-4a07-a4be-c402311e917f.sql
+4cc61c5bea8a35ef3fd2294ca9c0ac84c6c1b813e39e3eb9c89681aa94b8b5b4  20260715155357_1f2b275c-e50e-42be-90e0-7c1ed4c9dbc7.sql
+215bc1b40b7a1ddea0a7334a9057147fd22642f7406efe40f98a26d2e8c89e9a  20260716110649_add_pending_to_user_role_enum.sql
+68835854c66aea1cc50e2065ce3760d73a347de072e7b6e9aa61ef472381f815  20260716110729_enable_rls_and_auth_triggers.sql
+032bc030eb5c351f8116ac72796c6cffd73ef8535c2969f79cc21d936e9d9854  20260716115153_seed_pilot_zones.sql
+631f16965ed50d90860b39bfb2931f2886b783ee5904e48a51808e426e21860e  20260716134146_create_test_operator_user.sql.sql
+e2eee9279497702c7b6570983521ef8c434f3c5a6b76360e2c5e7cb36b45e3b5  20260717013000_add_safe_deletion_functions.sql
+cdc3c1cebdce31bcb578573f31aac282ac86b0a75a02aa409d0d44aa540ca540  20260717173000_add_organization_data_isolation.sql
+982cb0f9b6ec4107790672f3c589309ba3b1678fd4b7d5a0192f95a2c39ee843  20260718090000_fix_pending_signup_role.sql
+963c2063ecae3d1a74e76543fdb90a9a5a762053090e24bf7d43e1615cbf2691  20260718103000_seed_standard_organization_zones.sql
+95a6940b6c3f822cf5fca755c572e40462514fcd59e9783924451e557b878a67  20260718111500_scope_collector_phone_uniqueness_to_organization.sql
+```
