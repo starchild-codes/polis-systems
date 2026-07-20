@@ -28,10 +28,19 @@ function writeSafeLog(entry: SafeWebhookLog): void {
   console.info("twilio_whatsapp_webhook", entry);
 }
 
-export default async function whatsappWebhook(
+export default async function handler(
   request: VercelRequestLike,
   response: VercelResponseLike,
 ): Promise<void> {
+  if ((request.method || "").toUpperCase() !== "POST") {
+    response
+      .status(405)
+      .setHeader("Allow", "POST")
+      .setHeader("Content-Type", "text/plain; charset=utf-8")
+      .send("Method Not Allowed");
+    return;
+  }
+
   if (!request.headers["x-twilio-signature"]) {
     writeSafeLog({ status: "rejected", errorCode: "missing_signature" });
     response.status(403).setHeader("Content-Type", "text/plain; charset=utf-8").send("Forbidden");
