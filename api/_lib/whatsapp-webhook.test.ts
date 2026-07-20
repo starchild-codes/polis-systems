@@ -4,6 +4,7 @@ import twilio from "twilio";
 import { normalizeWhatsAppPhone } from "./phone.js";
 import {
   AMBIGUOUS_ASSIGNMENT_MESSAGE,
+  BEFORE_PHOTO_RECEIVED_MESSAGE,
   GENERIC_ERROR_MESSAGE,
   INVALID_ASSIGNMENT_COMMAND_MESSAGE,
   NO_ACTIVE_ASSIGNMENT_MESSAGE,
@@ -17,6 +18,7 @@ import {
   type WebhookRequest,
   type WhatsAppWebhookStore,
 } from "./whatsapp-webhook.js";
+import type { WhatsAppProofMediaService } from "./whatsapp-proof.js";
 
 const AUTH_TOKEN = "test_auth_token_not_a_real_secret";
 const PUBLIC_URL = "https://polis-systems.vercel.app/api/twilio/whatsapp";
@@ -78,11 +80,13 @@ async function execute(
     publicUrl: string,
     parameters: Record<string, string>,
   ) => boolean = () => true,
+  proofMediaService?: WhatsAppProofMediaService,
 ) {
   return handleWhatsAppWebhook(request, {
     authToken: AUTH_TOKEN,
     store,
     validateSignature,
+    proofMediaService,
   });
 }
 
@@ -232,6 +236,51 @@ describe("Twilio WhatsApp webhook", () => {
 
     assert.deepEqual(claim.calls, [[withMedia.MessageSid, true]]);
     assert.doesNotMatch(JSON.stringify(claim.calls), /private-media/);
+  });
+
+  it("routes an active proof photo through secure storage instead of Stage 2 command handling", async () => {
+    const collector = { id: "collector-1", organizationId: "organization-1" };
+    const processTaskResponse = tracked(async () => "invalid_command" as const);
+    const storeProofPhoto = tracked(async () => "before_photo_received" as const);
+    const store = createStore({
+      findCollectorsByPhone: async () => [collector],
+      processTaskResponse,
+      findProofContext: async () => ({
+        sessionId: "session-1",
+        taskId: "task-1",
+        organizationId: collector.organizationId,
+        collectorId: collector.id,
+        conversationState: "awaiting_before_photo",
+        proofStep: null,
+        assignmentStatus: "accepted",
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        beforePhotoPath: null,
+        afterPhotoPath: null,
+        taskAvailable: true,
+      }),
+      recordProofPrompt: async (_collector, _sid, code) => code,
+      storeProofPhoto,
+      storeProofText: async () => "waste_type_received",
+      submitProof: async () => "proof_submitted",
+      cancelProof: async () => ({ responseCode: "proof_cancelled", paths: [] }),
+    });
+    const media: WhatsAppProofMediaService = {
+      storeImage: async ({ kind }) => ({ path: `organizations/organization-1/tasks/task-1/submissions/session-1/${kind}-safe.jpg` }),
+      removeImages: async () => undefined,
+    };
+    const message = {
+      ...baseParameters,
+      Body: "",
+      NumMedia: "1",
+      MediaUrl0: "https://api.twilio.com/media/ME1",
+      MediaContentType0: "image/jpeg",
+    };
+
+    const response = await execute(createRequest(message), store, () => true, media);
+
+    assert.match(response.body, new RegExp(BEFORE_PHOTO_RECEIVED_MESSAGE));
+    assert.equal(storeProofPhoto.calls.length, 1);
+    assert.equal(processTaskResponse.calls.length, 0);
   });
 
   it("returns valid XML content type for TwiML", async () => {

@@ -9,6 +9,7 @@ import {
   handleWhatsAppWebhook,
   type SafeWebhookLog,
 } from "../_lib/whatsapp-webhook.js";
+import { SupabaseTwilioProofMediaService } from "../_lib/whatsapp-proof-media.js";
 import { createMessagingTwiml, GENERIC_ERROR_MESSAGE } from "../_lib/twiml.js";
 
 interface VercelRequestLike {
@@ -49,7 +50,13 @@ export default async function handler(
 
   try {
     const config = loadWhatsAppServerConfig();
-    const store = new SupabaseWhatsAppWebhookStore(createWebhookSupabaseClient(config));
+    const supabase = createWebhookSupabaseClient(config);
+    const store = new SupabaseWhatsAppWebhookStore(supabase);
+    const proofMediaService = new SupabaseTwilioProofMediaService(supabase, {
+      accountSid: config.twilioAccountSid,
+      authToken: config.twilioAuthToken,
+      maximumBytes: config.whatsappMediaMaxBytes,
+    });
     const result = await handleWhatsAppWebhook(
       {
         method: request.method,
@@ -60,6 +67,7 @@ export default async function handler(
       {
         authToken: config.twilioAuthToken,
         store,
+        proofMediaService,
         validateSignature: twilio.validateRequest,
         log: writeSafeLog,
       },

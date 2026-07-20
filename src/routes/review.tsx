@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import {
   fetchSubmissions, approveSubmission, rejectSubmission, createTestSubmission,
   deleteTestSubmission, isTestSubmission,
+  fetchSubmissionProofUrls,
+  type SubmissionProofUrls,
   type SubmissionWithRelations,
 } from "@/lib/submission-store";
 import { useTaskStore } from "@/lib/task-store";
@@ -511,6 +513,9 @@ function SubmissionDetailDrawer({
 }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [proofUrls, setProofUrls] = useState<SubmissionProofUrls | null>(null);
+  const [proofLoading, setProofLoading] = useState(false);
+  const [proofError, setProofError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -518,6 +523,34 @@ function SubmissionDetailDrawer({
       setRejectReason("");
     }
   }, [open, submission?.id]);
+
+  useEffect(() => {
+    let active = true;
+    if (!open || !submission || (!submission.beforePhotoPath && !submission.afterPhotoPath)) {
+      setProofUrls(null);
+      setProofLoading(false);
+      setProofError(null);
+      return () => { active = false; };
+    }
+
+    setProofLoading(true);
+    setProofError(null);
+    setProofUrls(null);
+    fetchSubmissionProofUrls(submission.id)
+      .then((urls) => {
+        if (active) setProofUrls(urls);
+      })
+      .catch((error) => {
+        if (active) {
+          setProofError(error instanceof Error ? error.message : "Proof images are unavailable.");
+        }
+      })
+      .finally(() => {
+        if (active) setProofLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [open, submission?.id, submission?.beforePhotoPath, submission?.afterPhotoPath]);
 
   if (!submission) return null;
 
@@ -596,8 +629,22 @@ function SubmissionDetailDrawer({
               )}
               {(submission.beforePhotoPath || submission.afterPhotoPath) && (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {submission.beforePhotoPath && <EvidenceFile label="Before photo" path={submission.beforePhotoPath} />}
-                  {submission.afterPhotoPath && <EvidenceFile label="After photo" path={submission.afterPhotoPath} />}
+                  {submission.beforePhotoPath && (
+                    <EvidencePreview
+                      label="Before photo"
+                      url={proofUrls?.beforeUrl ?? null}
+                      loading={proofLoading}
+                      error={proofError || (proofUrls?.unavailable.includes("before") ? "This legacy proof path cannot be opened securely." : null)}
+                    />
+                  )}
+                  {submission.afterPhotoPath && (
+                    <EvidencePreview
+                      label="After photo"
+                      url={proofUrls?.afterUrl ?? null}
+                      loading={proofLoading}
+                      error={proofError || (proofUrls?.unavailable.includes("after") ? "This legacy proof path cannot be opened securely." : null)}
+                    />
+                  )}
                 </div>
               )}
               {submission.collectorNotes && (
@@ -709,11 +756,39 @@ function DetailRow({
   );
 }
 
-function EvidenceFile({ label, path }: { label: string; path: string }) {
+function EvidencePreview({
+  label, url, loading, error,
+}: {
+  label: string;
+  url: string | null;
+  loading: boolean;
+  error: string | null;
+}) {
   return (
-    <div className="rounded-xl border border-border bg-muted/30 p-3">
-      <div className="flex items-center gap-2 text-xs font-semibold text-foreground"><ImageIcon className="h-4 w-4 text-primary" />{label}</div>
-      <p className="mt-2 break-all font-mono text-[11px] leading-4 text-muted-foreground">{path}</p>
+    <div className="overflow-hidden rounded-xl border border-border bg-muted/30">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs font-semibold text-foreground">
+        <ImageIcon className="h-4 w-4 text-primary" />{label}
+      </div>
+      <div className="flex aspect-[4/3] items-center justify-center bg-muted/45">
+        {loading ? (
+          <Skeleton className="h-full w-full rounded-none" />
+        ) : url ? (
+          <img
+            src={url}
+            alt={`${label} submitted by the collector`}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="px-4 text-center">
+            <ImageIcon className="mx-auto h-6 w-6 text-muted-foreground/60" />
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {error || "No secure preview is available for this image."}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

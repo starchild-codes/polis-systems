@@ -63,6 +63,13 @@ export interface SubmissionWithRelations extends Submission {
   collector: CollectorInfo | null;
 }
 
+export interface SubmissionProofUrls {
+  beforeUrl: string | null;
+  afterUrl: string | null;
+  expiresIn: number;
+  unavailable: Array<"before" | "after">;
+}
+
 export const TEST_SUBMISSION_MARKER = "[POLIS ADMIN TEST SUBMISSION]";
 
 export function isTestSubmission(submission: Pick<Submission, "collectorNotes">): boolean {
@@ -230,6 +237,36 @@ export async function fetchSubmissions(): Promise<SubmissionWithRelations[]> {
     task: taskMap.get(row.task_id) ?? null,
     collector: collectorMap.get(row.collector_id) ?? null,
   }));
+}
+
+export async function fetchSubmissionProofUrls(
+  submissionId: string,
+): Promise<SubmissionProofUrls> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.access_token) {
+    throw new Error("Your session has expired. Please log in again.");
+  }
+
+  const response = await fetch(
+    `/api/review/submission-media?submissionId=${encodeURIComponent(submissionId)}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${data.session.access_token}` },
+      cache: "no-store",
+    },
+  );
+  const payload = await response.json().catch(() => null) as Partial<SubmissionProofUrls> & {
+    error?: string;
+  } | null;
+  if (!response.ok) {
+    throw new Error(payload?.error || "Proof images are temporarily unavailable.");
+  }
+  return {
+    beforeUrl: typeof payload?.beforeUrl === "string" ? payload.beforeUrl : null,
+    afterUrl: typeof payload?.afterUrl === "string" ? payload.afterUrl : null,
+    expiresIn: typeof payload?.expiresIn === "number" ? payload.expiresIn : 300,
+    unavailable: Array.isArray(payload?.unavailable) ? payload.unavailable : [],
+  };
 }
 
 export async function createTestSubmission({

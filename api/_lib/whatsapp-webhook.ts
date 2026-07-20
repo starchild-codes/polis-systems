@@ -1,15 +1,36 @@
 import { normalizeWhatsAppPhone } from "./phone.js";
 import {
+  AFTER_PHOTO_RECEIVED_MESSAGE,
   AMBIGUOUS_ASSIGNMENT_MESSAGE,
+  BEFORE_PHOTO_RECEIVED_MESSAGE,
   createMessagingTwiml,
+  EXPECTED_AFTER_PHOTO_MESSAGE,
+  EXPECTED_BEFORE_PHOTO_MESSAGE,
+  EXPECTED_NOTES_MESSAGE,
+  EXPECTED_QUANTITY_MESSAGE,
+  EXPECTED_WASTE_TYPE_MESSAGE,
   GENERIC_ERROR_MESSAGE,
   INVALID_ASSIGNMENT_COMMAND_MESSAGE,
+  MEDIA_RETRY_MESSAGE,
   NO_ACTIVE_ASSIGNMENT_MESSAGE,
+  PROOF_CANCELLED_MESSAGE,
+  PROOF_EXPIRED_MESSAGE,
+  PROOF_RETRY_MESSAGE,
+  PROOF_SUBMITTED_MESSAGE,
+  QUANTITY_RECEIVED_MESSAGE,
   RECOGNIZED_COLLECTOR_MESSAGE,
+  TASK_UNAVAILABLE_MESSAGE,
   TASK_ACCEPTED_MESSAGE,
   TASK_DECLINED_MESSAGE,
   UNRECOGNIZED_COLLECTOR_MESSAGE,
+  WASTE_TYPE_RECEIVED_MESSAGE,
 } from "./twiml.js";
+import {
+  handleWhatsAppProofWorkflow,
+  isActiveProofContext,
+  type WhatsAppProofMediaService,
+  type WhatsAppProofStore,
+} from "./whatsapp-proof.js";
 
 export type WebhookProcessingStatus =
   | "received"
@@ -25,6 +46,19 @@ export type WebhookResponseCode =
   | "no_active_session"
   | "ambiguous_session"
   | "invalid_command"
+  | "before_photo_received"
+  | "after_photo_received"
+  | "waste_type_received"
+  | "quantity_received"
+  | "proof_submitted"
+  | "expected_before_photo"
+  | "expected_after_photo"
+  | "expected_waste_type"
+  | "expected_quantity"
+  | "expected_notes"
+  | "proof_expired"
+  | "task_unavailable"
+  | "proof_cancelled"
   | "generic_error";
 
 export type WebhookEventClaim =
@@ -40,7 +74,7 @@ export interface CollectorIdentity {
   organizationId: string;
 }
 
-export interface WhatsAppWebhookStore {
+export interface WhatsAppWebhookStore extends Partial<WhatsAppProofStore> {
   claim(messageSid: string, hasMedia: boolean): Promise<WebhookEventClaim>;
   findCollectorsByPhone(phoneE164: string): Promise<CollectorIdentity[]>;
   markProcessed(
@@ -86,6 +120,7 @@ export interface WhatsAppWebhookDependencies {
     publicUrl: string,
     parameters: Record<string, string>,
   ) => boolean;
+  proofMediaService?: WhatsAppProofMediaService;
   log?: (entry: SafeWebhookLog) => void;
 }
 
@@ -95,8 +130,7 @@ interface ParsedInboundMessage {
   to: string;
   body: string;
   numMedia: number;
-  mediaUrl0: string | null;
-  mediaContentType0: string | null;
+  media: Array<{ url: string; contentType: string }>;
 }
 
 const XML_HEADERS = { "Content-Type": "application/xml; charset=utf-8" };
@@ -187,7 +221,14 @@ function parseInboundMessage(
   const rawNumMedia = parameters.NumMedia?.trim() || "0";
   if (!/^\d+$/.test(rawNumMedia)) return null;
   const numMedia = Number.parseInt(rawNumMedia, 10);
-  if (!Number.isSafeInteger(numMedia) || numMedia < 0) return null;
+  if (!Number.isSafeInteger(numMedia) || numMedia < 0 || numMedia > 10) return null;
+
+  const media: Array<{ url: string; contentType: string }> = [];
+  for (let index = 0; index < numMedia; index += 1) {
+    const url = parameters[`MediaUrl${index}`]?.trim();
+    const contentType = parameters[`MediaContentType${index}`]?.trim();
+    if (url && contentType) media.push({ url, contentType });
+  }
 
   return {
     messageSid,
@@ -195,8 +236,7 @@ function parseInboundMessage(
     to: parameters.To || "",
     body: parameters.Body || "",
     numMedia,
-    mediaUrl0: parameters.MediaUrl0 || null,
-    mediaContentType0: parameters.MediaContentType0 || null,
+    media,
   };
 }
 
@@ -204,7 +244,7 @@ function twimlResponse(message: string, status = 200): WebhookResponse {
   return { status, headers: XML_HEADERS, body: createMessagingTwiml(message) };
 }
 
-function responseMessage(code: WebhookResponseCode | null | undefined): string {
+export function responseMessage(code: WebhookResponseCode | null | undefined): string {
   switch (code) {
     case "accepted":
       return TASK_ACCEPTED_MESSAGE;
@@ -216,6 +256,32 @@ function responseMessage(code: WebhookResponseCode | null | undefined): string {
       return AMBIGUOUS_ASSIGNMENT_MESSAGE;
     case "invalid_command":
       return INVALID_ASSIGNMENT_COMMAND_MESSAGE;
+    case "before_photo_received":
+      return BEFORE_PHOTO_RECEIVED_MESSAGE;
+    case "after_photo_received":
+      return AFTER_PHOTO_RECEIVED_MESSAGE;
+    case "waste_type_received":
+      return WASTE_TYPE_RECEIVED_MESSAGE;
+    case "quantity_received":
+      return QUANTITY_RECEIVED_MESSAGE;
+    case "proof_submitted":
+      return PROOF_SUBMITTED_MESSAGE;
+    case "expected_before_photo":
+      return EXPECTED_BEFORE_PHOTO_MESSAGE;
+    case "expected_after_photo":
+      return EXPECTED_AFTER_PHOTO_MESSAGE;
+    case "expected_waste_type":
+      return EXPECTED_WASTE_TYPE_MESSAGE;
+    case "expected_quantity":
+      return EXPECTED_QUANTITY_MESSAGE;
+    case "expected_notes":
+      return EXPECTED_NOTES_MESSAGE;
+    case "proof_expired":
+      return PROOF_EXPIRED_MESSAGE;
+    case "task_unavailable":
+      return TASK_UNAVAILABLE_MESSAGE;
+    case "proof_cancelled":
+      return PROOF_CANCELLED_MESSAGE;
     case "unrecognized_collector":
       return UNRECOGNIZED_COLLECTOR_MESSAGE;
     case "recognized_collector":
@@ -223,6 +289,17 @@ function responseMessage(code: WebhookResponseCode | null | undefined): string {
     default:
       return GENERIC_ERROR_MESSAGE;
   }
+}
+
+function isCompleteProofStore(
+  store: WhatsAppWebhookStore,
+): store is WhatsAppWebhookStore & WhatsAppProofStore {
+  return typeof store.findProofContext === "function"
+    && typeof store.recordProofPrompt === "function"
+    && typeof store.storeProofPhoto === "function"
+    && typeof store.storeProofText === "function"
+    && typeof store.submitProof === "function"
+    && typeof store.cancelProof === "function";
 }
 
 async function markErrorSafely(
@@ -292,8 +369,9 @@ export async function handleWhatsAppWebhook(
 
   const hasMedia =
     inbound.numMedia > 0 ||
-    Boolean(inbound.mediaUrl0) ||
-    Boolean(inbound.mediaContentType0);
+    inbound.media.length > 0 ||
+    Boolean(parameters.MediaUrl0) ||
+    Boolean(parameters.MediaContentType0);
 
   try {
     const claim = await dependencies.store.claim(inbound.messageSid, hasMedia);
@@ -371,6 +449,59 @@ export async function handleWhatsAppWebhook(
     }
 
     const collector = matches[0];
+
+    if (isCompleteProofStore(dependencies.store) && dependencies.proofMediaService) {
+      let proofContext;
+      try {
+        proofContext = await dependencies.store.findProofContext(collector);
+      } catch {
+        await markErrorSafely(dependencies.store, inbound.messageSid, "proof_context_lookup_failed");
+        log({
+          messageSid: inbound.messageSid,
+          status: "error",
+          collectorMatched: true,
+          errorCode: "proof_context_lookup_failed",
+        });
+        return twimlResponse(PROOF_RETRY_MESSAGE, 500);
+      }
+
+      if (isActiveProofContext(proofContext)) {
+        const proofResult = await handleWhatsAppProofWorkflow(
+          {
+            messageSid: inbound.messageSid,
+            body: inbound.body,
+            numMedia: inbound.numMedia,
+            media: inbound.media,
+          },
+          collector,
+          proofContext,
+          dependencies.store,
+          dependencies.proofMediaService,
+        );
+
+        if (proofResult.kind === "failed") {
+          await markErrorSafely(dependencies.store, inbound.messageSid, proofResult.errorCode);
+          log({
+            messageSid: inbound.messageSid,
+            status: "error",
+            collectorMatched: true,
+            errorCode: proofResult.errorCode,
+          });
+          const mediaFailure = proofResult.errorCode.includes("media")
+            || proofResult.errorCode.includes("photo")
+            || proofResult.errorCode.includes("storage");
+          return twimlResponse(mediaFailure ? MEDIA_RETRY_MESSAGE : PROOF_RETRY_MESSAGE);
+        }
+
+        log({
+          messageSid: inbound.messageSid,
+          status: proofResult.responseCode,
+          collectorMatched: true,
+        });
+        return twimlResponse(responseMessage(proofResult.responseCode));
+      }
+    }
+
     const responseCode = await dependencies.store.processTaskResponse(
       collector,
       inbound.messageSid,

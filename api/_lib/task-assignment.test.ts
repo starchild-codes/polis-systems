@@ -190,6 +190,21 @@ describe("WhatsApp outbound task assignment", () => {
     assert.equal(send.calls.length, 0);
   });
 
+  it("does not overwrite a collector's active proof workflow", async () => {
+    const send = tracked(async (_message: Parameters<TaskAssignmentSender["send"]>[0]) => ({
+      messageSid: "should-not-send",
+    }));
+    const response = await execute(
+      createStore({
+        prepareAssignment: async () => ({ result: "collector_busy", sessionId: null }),
+      }),
+      createSender(send),
+    );
+    assert.equal(response.status, 409);
+    assert.match(response.body, /finish or cancel their active proof workflow/iu);
+    assert.equal(send.calls.length, 0);
+  });
+
   it("reuses the prepared database session returned by the store", async () => {
     const complete = tracked(createStore().completeAssignment);
     await execute(createStore({

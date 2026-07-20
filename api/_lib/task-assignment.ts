@@ -44,6 +44,7 @@ export type PrepareAssignmentResult =
         | "authorization_failed"
         | "task_not_found"
         | "task_not_assignable"
+        | "collector_busy"
         | "organization_mismatch"
         | "invalid_expiry";
       sessionId: null;
@@ -268,6 +269,11 @@ export async function handleTaskAssignment(
     }
     if (preparation.result === "in_progress") {
       return jsonResponse(409, { error: "This assignment is already being sent." });
+    }
+    if (preparation.result === "collector_busy") {
+      return jsonResponse(409, {
+        error: "This collector must finish or cancel their active proof workflow before receiving another WhatsApp assignment.",
+      });
     }
     if (preparation.result !== "prepared") {
       log({ status: "rejected", taskId, errorCode: preparation.result });

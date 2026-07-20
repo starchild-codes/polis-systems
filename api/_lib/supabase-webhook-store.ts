@@ -6,6 +6,13 @@ import type {
   WebhookResponseCode,
   WhatsAppWebhookStore,
 } from "./whatsapp-webhook.js";
+import type {
+  ProofConversationState,
+  ProofStep,
+  WhatsAppProofContext,
+  WhatsAppProofStore,
+} from "./whatsapp-proof.js";
+import { DEFAULT_WHATSAPP_MEDIA_MAX_BYTES } from "./whatsapp-proof-media.js";
 
 const DUPLICATE_KEY_CODE = "23505";
 
@@ -16,6 +23,7 @@ export interface WhatsAppServerConfig {
   twilioTaskAssignmentContentSid?: string;
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
+  whatsappMediaMaxBytes: number;
 }
 
 export function loadWhatsAppServerConfig(
@@ -33,10 +41,16 @@ export function loadWhatsAppServerConfig(
     if (!value) throw new Error(`missing_server_configuration:${name}`);
   }
 
+  const configuredMaximum = Number.parseInt(environment.WHATSAPP_MEDIA_MAX_BYTES || "", 10);
+  const whatsappMediaMaxBytes = Number.isSafeInteger(configuredMaximum) && configuredMaximum > 0
+    ? Math.min(configuredMaximum, DEFAULT_WHATSAPP_MEDIA_MAX_BYTES)
+    : DEFAULT_WHATSAPP_MEDIA_MAX_BYTES;
+
   return {
     ...(required as Omit<WhatsAppServerConfig, "twilioTaskAssignmentContentSid">),
     twilioTaskAssignmentContentSid:
       environment.TWILIO_TASK_ASSIGNMENT_CONTENT_SID?.trim() || undefined,
+    whatsappMediaMaxBytes,
   };
 }
 
@@ -46,7 +60,7 @@ export function createWebhookSupabaseClient(config: WhatsAppServerConfig): Supab
   });
 }
 
-export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
+export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore, WhatsAppProofStore {
   constructor(private readonly supabase: SupabaseClient) {}
 
   async claim(messageSid: string, hasMedia: boolean): Promise<WebhookEventClaim> {
@@ -133,5 +147,156 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
     const result = row?.result as WebhookResponseCode | undefined;
     if (!result) throw new Error("task_response_failed");
     return result;
+  }
+
+  async findProofContext(collector: CollectorIdentity): Promise<WhatsAppProofContext | null> {
+    const { data, error } = await this.supabase
+      .from("whatsapp_sessions")
+      .select([
+        "id",
+        "task_id",
+        "organization_id",
+        "collector_id",
+        "conversation_state",
+        "proof_step",
+        "assignment_status",
+        "expires_at",
+        "before_photo_path",
+        "after_photo_path",
+      ].join(","))
+      .eq("collector_id", collector.id)
+      .eq("organization_id", collector.organizationId)
+      .in("conversation_state", [
+        "awaiting_before_photo",
+        "awaiting_after_photo",
+        "awaiting_details",
+        "submitted",
+      ])
+      .maybeSingle();
+    if (error) throw new Error("proof_context_lookup_failed");
+    if (!data) return null;
+
+    const row = data as unknown as {
+      id: string;
+      task_id: string;
+      organization_id: string;
+      collector_id: string;
+      conversation_state: string;
+      proof_step: string | null;
+      assignment_status: string;
+      expires_at: string | null;
+      before_photo_path: string | null;
+      after_photo_path: string | null;
+    };
+    if (!row.task_id) return null;
+
+    const { data: task, error: taskError } = await this.supabase
+      .from("tasks")
+      .select("id")
+      .eq("id", row.task_id)
+      .eq("organization_id", collector.organizationId)
+      .eq("collector_id", collector.id)
+      .in("status", ["accepted", "in_progress"])
+      .maybeSingle();
+    if (taskError) throw new Error("proof_task_lookup_failed");
+
+    return {
+      sessionId: row.id,
+      taskId: row.task_id,
+      organizationId: row.organization_id,
+      collectorId: row.collector_id,
+      conversationState: row.conversation_state as ProofConversationState,
+      proofStep: row.proof_step as ProofStep,
+      assignmentStatus: row.assignment_status,
+      expiresAt: row.expires_at,
+      beforePhotoPath: row.before_photo_path,
+      afterPhotoPath: row.after_photo_path,
+      taskAvailable: Boolean(task),
+    };
+  }
+
+  async recordProofPrompt(
+    collector: CollectorIdentity,
+    messageSid: string,
+    responseCode: WebhookResponseCode,
+  ): Promise<WebhookResponseCode> {
+    const { data, error } = await this.supabase.rpc("record_whatsapp_proof_prompt", {
+      p_collector_id: collector.id,
+      p_organization_id: collector.organizationId,
+      p_inbound_message_sid: messageSid,
+      p_response_code: responseCode,
+    });
+    if (error || typeof data !== "string") throw new Error("proof_prompt_failed");
+    return data as WebhookResponseCode;
+  }
+
+  async storeProofPhoto(input: {
+    collector: CollectorIdentity;
+    messageSid: string;
+    kind: "before" | "after";
+    objectPath: string;
+  }): Promise<WebhookResponseCode> {
+    const { data, error } = await this.supabase.rpc("store_whatsapp_proof_photo", {
+      p_collector_id: input.collector.id,
+      p_organization_id: input.collector.organizationId,
+      p_inbound_message_sid: input.messageSid,
+      p_photo_kind: input.kind,
+      p_object_path: input.objectPath,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.result) throw new Error("proof_photo_transition_failed");
+    return row.result as WebhookResponseCode;
+  }
+
+  async storeProofText(input: {
+    collector: CollectorIdentity;
+    messageSid: string;
+    field: "waste_type" | "waste_quantity";
+    value: string;
+  }): Promise<WebhookResponseCode> {
+    const { data, error } = await this.supabase.rpc("store_whatsapp_proof_text", {
+      p_collector_id: input.collector.id,
+      p_organization_id: input.collector.organizationId,
+      p_inbound_message_sid: input.messageSid,
+      p_field: input.field,
+      p_value: input.value,
+    });
+    if (error || typeof data !== "string") throw new Error("proof_text_transition_failed");
+    return data as WebhookResponseCode;
+  }
+
+  async submitProof(input: {
+    collector: CollectorIdentity;
+    messageSid: string;
+    notes: string | null;
+  }): Promise<WebhookResponseCode> {
+    const { data, error } = await this.supabase.rpc("submit_whatsapp_proof", {
+      p_collector_id: input.collector.id,
+      p_organization_id: input.collector.organizationId,
+      p_inbound_message_sid: input.messageSid,
+      p_notes: input.notes,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.result) throw new Error("proof_submission_failed");
+    return row.result as WebhookResponseCode;
+  }
+
+  async cancelProof(
+    collector: CollectorIdentity,
+    messageSid: string,
+  ): Promise<{ responseCode: WebhookResponseCode; paths: string[] }> {
+    const { data, error } = await this.supabase.rpc("cancel_whatsapp_proof_workflow", {
+      p_collector_id: collector.id,
+      p_organization_id: collector.organizationId,
+      p_inbound_message_sid: messageSid,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.result) throw new Error("proof_cancel_failed");
+    return {
+      responseCode: row.result as WebhookResponseCode,
+      paths: [row.before_photo_path, row.after_photo_path].filter(
+        (path): path is string => typeof path === "string" && path.length > 0,
+      ),
+    };
   }
 }
