@@ -480,7 +480,7 @@ function TasksPage() {
         task={liveSelectedTask}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        collectors={computeAssignableCollectors(collectors)}
+        collectors={collectors}
         whatsappSending={whatsappSendingTaskId === liveSelectedTask?.id}
         onAction={handleDrawerAction}
       />

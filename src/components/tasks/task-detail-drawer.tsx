@@ -16,8 +16,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
-  formatFriendlyDateTime, formatFriendlyDate, isTaskOverdue,
-  isValidE164Phone,
+  computeAssignableCollectors, formatFriendlyDateTime, formatFriendlyDate, isTaskOverdue,
   type Task, type Collector,
 } from "@/lib/mock-data";
 import { useTaskEvents } from "@/lib/task-store";
@@ -49,18 +48,7 @@ export function TaskDetailDrawer({
 
   const overdue = isTaskOverdue(task);
   const assignedCollector = collectors.find((collector) => collector.name === task.assignee);
-  const canSendWhatsApp = Boolean(
-    task.status === "assigned"
-    && assignedCollector
-    && isValidE164Phone(assignedCollector.phone),
-  );
-  const whatsappUnavailableReason = !task.assignee
-    ? "Assign a collector first."
-    : !assignedCollector || !isValidE164Phone(assignedCollector.phone)
-      ? "The assigned collector needs a valid phone number."
-      : task.status !== "assigned"
-        ? "WhatsApp assignments can only be sent while the task is assigned."
-        : undefined;
+  const assignableCollectors = computeAssignableCollectors(collectors);
 
   function openAssignDialog(mode: "assign" | "reassign") {
     setAssignMode(mode);
@@ -169,9 +157,7 @@ export function TaskDetailDrawer({
             openAssignDialog,
             setCancelOpen,
             onAction,
-            canSendWhatsApp,
             whatsappSending,
-            whatsappUnavailableReason,
           })}
           </SheetFooter>
         </SheetContent>
@@ -184,13 +170,13 @@ export function TaskDetailDrawer({
             <SheetDescription>Choose an active collector for {task.title}.</SheetDescription>
           </SheetHeader>
           <div className="space-y-3 px-5 py-5 sm:px-6">
-            {collectors.length === 0 ? (
+            {assignableCollectors.length === 0 ? (
               <p className="text-sm text-muted-foreground">No active collectors available for assignment.</p>
             ) : (
               <Select value={selectedCollector} onValueChange={setSelectedCollector}>
                 <SelectTrigger><SelectValue placeholder="Select a collector" /></SelectTrigger>
                 <SelectContent>
-                  {collectors.map((c) => <SelectItem key={c.id} value={c.name}>{c.name} · {c.zone}</SelectItem>)}
+                  {assignableCollectors.map((c) => <SelectItem key={c.id} value={c.name}>{c.name} · {c.zone}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
@@ -245,18 +231,14 @@ function renderActions(
     openAssignDialog: (mode: "assign" | "reassign") => void;
     setCancelOpen: (open: boolean) => void;
     onAction: (action: DrawerAction, collector?: string) => void;
-    canSendWhatsApp: boolean;
     whatsappSending: boolean;
-    whatsappUnavailableReason?: string;
   },
 ) {
   const {
     openAssignDialog,
     setCancelOpen,
     onAction,
-    canSendWhatsApp,
     whatsappSending,
-    whatsappUnavailableReason,
   } = handlers;
   if (task.status === "submitted") {
     return <Button asChild size="sm" className="ml-auto"><Link to="/review" search={{ taskId: task.id }}>Review submission</Link></Button>;
@@ -278,8 +260,8 @@ function renderActions(
           variant="outline"
           size="sm"
           className="gap-1.5"
-          disabled={!canSendWhatsApp || whatsappSending}
-          title={whatsappUnavailableReason}
+          disabled={whatsappSending}
+          title="Send this task to the assigned collector on WhatsApp"
           onClick={() => onAction("whatsapp")}
         >
           <MessageCircle className="h-3.5 w-3.5" />
