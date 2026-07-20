@@ -12,28 +12,31 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  MapPin, Phone, User, Calendar, Clock, ImageIcon, Pencil, Trash2,
+  MapPin, Phone, User, Calendar, Clock, ImageIcon, MessageCircle, Pencil, Trash2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   formatFriendlyDateTime, formatFriendlyDate, isTaskOverdue,
+  isValidE164Phone,
   type Task, type Collector,
 } from "@/lib/mock-data";
 import { useTaskEvents } from "@/lib/task-store";
 
-type DrawerAction = "edit" | "assign" | "reassign" | "cancel" | "delete" | "resubmit" | "export";
+type DrawerAction = "edit" | "assign" | "reassign" | "whatsapp" | "cancel" | "delete" | "resubmit" | "export";
 
 export function TaskDetailDrawer({
   task,
   open,
   onOpenChange,
   collectors,
+  whatsappSending = false,
   onAction,
 }: {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   collectors: Collector[];
+  whatsappSending?: boolean;
   onAction: (action: DrawerAction, collector?: string) => void;
 }) {
   const events = useTaskEvents(task?.id ?? "__none");
@@ -45,6 +48,19 @@ export function TaskDetailDrawer({
   if (!task) return null;
 
   const overdue = isTaskOverdue(task);
+  const assignedCollector = collectors.find((collector) => collector.name === task.assignee);
+  const canSendWhatsApp = Boolean(
+    task.status === "assigned"
+    && assignedCollector
+    && isValidE164Phone(assignedCollector.phone),
+  );
+  const whatsappUnavailableReason = !task.assignee
+    ? "Assign a collector first."
+    : !assignedCollector || !isValidE164Phone(assignedCollector.phone)
+      ? "The assigned collector needs a valid phone number."
+      : task.status !== "assigned"
+        ? "WhatsApp assignments can only be sent while the task is assigned."
+        : undefined;
 
   function openAssignDialog(mode: "assign" | "reassign") {
     setAssignMode(mode);
@@ -149,7 +165,14 @@ export function TaskDetailDrawer({
           </div>
 
           <SheetFooter className="sticky bottom-0 flex-row flex-wrap gap-2">
-          {renderActions(task, { openAssignDialog, setCancelOpen, onAction })}
+          {renderActions(task, {
+            openAssignDialog,
+            setCancelOpen,
+            onAction,
+            canSendWhatsApp,
+            whatsappSending,
+            whatsappUnavailableReason,
+          })}
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -222,9 +245,19 @@ function renderActions(
     openAssignDialog: (mode: "assign" | "reassign") => void;
     setCancelOpen: (open: boolean) => void;
     onAction: (action: DrawerAction, collector?: string) => void;
+    canSendWhatsApp: boolean;
+    whatsappSending: boolean;
+    whatsappUnavailableReason?: string;
   },
 ) {
-  const { openAssignDialog, setCancelOpen, onAction } = handlers;
+  const {
+    openAssignDialog,
+    setCancelOpen,
+    onAction,
+    canSendWhatsApp,
+    whatsappSending,
+    whatsappUnavailableReason,
+  } = handlers;
   if (task.status === "submitted") {
     return <Button asChild size="sm" className="ml-auto"><Link to="/review" search={{ taskId: task.id }}>Review submission</Link></Button>;
   }
@@ -240,6 +273,19 @@ function renderActions(
     <>
       <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onAction("edit")}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
       <Button size="sm" onClick={() => openAssignDialog(task.assignee ? "reassign" : "assign")}>{task.assignee ? "Reassign" : "Assign collector"}</Button>
+      {task.status === "assigned" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={!canSendWhatsApp || whatsappSending}
+          title={whatsappUnavailableReason}
+          onClick={() => onAction("whatsapp")}
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          {whatsappSending ? "Sending…" : "Send WhatsApp Assignment"}
+        </Button>
+      )}
       {task.status === "rejected" && <Button variant="outline" size="sm" onClick={() => onAction("resubmit")}>Request resubmission</Button>}
       <div className="ml-auto flex gap-2">
         <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setCancelOpen(true)}>Cancel task</Button>

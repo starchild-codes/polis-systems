@@ -1,8 +1,13 @@
 import { normalizeWhatsAppPhone } from "./phone.js";
 import {
+  AMBIGUOUS_ASSIGNMENT_MESSAGE,
   createMessagingTwiml,
   GENERIC_ERROR_MESSAGE,
+  INVALID_ASSIGNMENT_COMMAND_MESSAGE,
+  NO_ACTIVE_ASSIGNMENT_MESSAGE,
   RECOGNIZED_COLLECTOR_MESSAGE,
+  TASK_ACCEPTED_MESSAGE,
+  TASK_DECLINED_MESSAGE,
   UNRECOGNIZED_COLLECTOR_MESSAGE,
 } from "./twiml.js";
 
@@ -12,9 +17,23 @@ export type WebhookProcessingStatus =
   | "unrecognized"
   | "error";
 
+export type WebhookResponseCode =
+  | "recognized_collector"
+  | "unrecognized_collector"
+  | "accepted"
+  | "declined"
+  | "no_active_session"
+  | "ambiguous_session"
+  | "invalid_command"
+  | "generic_error";
+
 export type WebhookEventClaim =
   | { kind: "claimed" }
-  | { kind: "duplicate"; processingStatus: WebhookProcessingStatus };
+  | {
+      kind: "duplicate";
+      processingStatus: WebhookProcessingStatus;
+      responseCode?: WebhookResponseCode | null;
+    };
 
 export interface CollectorIdentity {
   id: string;
@@ -28,8 +47,14 @@ export interface WhatsAppWebhookStore {
     messageSid: string,
     status: "recognized" | "unrecognized",
     collector?: CollectorIdentity,
+    responseCode?: WebhookResponseCode,
   ): Promise<void>;
   markError(messageSid: string, errorCode: string): Promise<void>;
+  processTaskResponse(
+    collector: CollectorIdentity,
+    messageSid: string,
+    body: string,
+  ): Promise<WebhookResponseCode>;
 }
 
 export interface SafeWebhookLog {
@@ -179,6 +204,27 @@ function twimlResponse(message: string, status = 200): WebhookResponse {
   return { status, headers: XML_HEADERS, body: createMessagingTwiml(message) };
 }
 
+function responseMessage(code: WebhookResponseCode | null | undefined): string {
+  switch (code) {
+    case "accepted":
+      return TASK_ACCEPTED_MESSAGE;
+    case "declined":
+      return TASK_DECLINED_MESSAGE;
+    case "no_active_session":
+      return NO_ACTIVE_ASSIGNMENT_MESSAGE;
+    case "ambiguous_session":
+      return AMBIGUOUS_ASSIGNMENT_MESSAGE;
+    case "invalid_command":
+      return INVALID_ASSIGNMENT_COMMAND_MESSAGE;
+    case "unrecognized_collector":
+      return UNRECOGNIZED_COLLECTOR_MESSAGE;
+    case "recognized_collector":
+      return RECOGNIZED_COLLECTOR_MESSAGE;
+    default:
+      return GENERIC_ERROR_MESSAGE;
+  }
+}
+
 async function markErrorSafely(
   store: WhatsAppWebhookStore,
   messageSid: string,
@@ -253,6 +299,9 @@ export async function handleWhatsAppWebhook(
     const claim = await dependencies.store.claim(inbound.messageSid, hasMedia);
     if (claim.kind === "duplicate") {
       log({ messageSid: inbound.messageSid, status: "duplicate" });
+      if (claim.responseCode) {
+        return twimlResponse(responseMessage(claim.responseCode));
+      }
       if (claim.processingStatus === "recognized") {
         return twimlResponse(RECOGNIZED_COLLECTOR_MESSAGE);
       }
@@ -269,7 +318,12 @@ export async function handleWhatsAppWebhook(
   const phoneE164 = normalizeWhatsAppPhone(inbound.from);
   if (!phoneE164) {
     try {
-      await dependencies.store.markProcessed(inbound.messageSid, "unrecognized");
+      await dependencies.store.markProcessed(
+        inbound.messageSid,
+        "unrecognized",
+        undefined,
+        "unrecognized_collector",
+      );
     } catch {
       await markErrorSafely(dependencies.store, inbound.messageSid, "event_update_failed");
       log({ messageSid: inbound.messageSid, status: "error", errorCode: "event_update_failed" });
@@ -279,10 +333,28 @@ export async function handleWhatsAppWebhook(
     return twimlResponse(UNRECOGNIZED_COLLECTOR_MESSAGE);
   }
 
+  let matches: CollectorIdentity[];
   try {
-    const matches = await dependencies.store.findCollectorsByPhone(phoneE164);
+    matches = await dependencies.store.findCollectorsByPhone(phoneE164);
+  } catch {
+    await markErrorSafely(dependencies.store, inbound.messageSid, "collector_lookup_failed");
+    log({
+      messageSid: inbound.messageSid,
+      status: "error",
+      collectorMatched: false,
+      errorCode: "collector_lookup_failed",
+    });
+    return twimlResponse(GENERIC_ERROR_MESSAGE, 500);
+  }
+
+  try {
     if (matches.length === 0) {
-      await dependencies.store.markProcessed(inbound.messageSid, "unrecognized");
+      await dependencies.store.markProcessed(
+        inbound.messageSid,
+        "unrecognized",
+        undefined,
+        "unrecognized_collector",
+      );
       log({ messageSid: inbound.messageSid, status: "unrecognized", collectorMatched: false });
       return twimlResponse(UNRECOGNIZED_COLLECTOR_MESSAGE);
     }
@@ -299,16 +371,29 @@ export async function handleWhatsAppWebhook(
     }
 
     const collector = matches[0];
-    await dependencies.store.markProcessed(inbound.messageSid, "recognized", collector);
-    log({ messageSid: inbound.messageSid, status: "recognized", collectorMatched: true });
-    return twimlResponse(RECOGNIZED_COLLECTOR_MESSAGE);
+    const responseCode = await dependencies.store.processTaskResponse(
+      collector,
+      inbound.messageSid,
+      inbound.body,
+    );
+    if (responseCode === "ambiguous_session") {
+      log({
+        messageSid: inbound.messageSid,
+        status: "error",
+        collectorMatched: true,
+        errorCode: "ambiguous_assignment_session",
+      });
+    } else {
+      log({ messageSid: inbound.messageSid, status: responseCode, collectorMatched: true });
+    }
+    return twimlResponse(responseMessage(responseCode));
   } catch {
-    await markErrorSafely(dependencies.store, inbound.messageSid, "collector_lookup_failed");
+    await markErrorSafely(dependencies.store, inbound.messageSid, "task_response_failed");
     log({
       messageSid: inbound.messageSid,
       status: "error",
-      collectorMatched: false,
-      errorCode: "collector_lookup_failed",
+      collectorMatched: true,
+      errorCode: "task_response_failed",
     });
     return twimlResponse(GENERIC_ERROR_MESSAGE, 500);
   }

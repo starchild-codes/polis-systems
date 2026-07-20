@@ -3,8 +3,12 @@ import { describe, it } from "node:test";
 import twilio from "twilio";
 import { normalizeWhatsAppPhone } from "./phone.js";
 import {
+  AMBIGUOUS_ASSIGNMENT_MESSAGE,
   GENERIC_ERROR_MESSAGE,
-  RECOGNIZED_COLLECTOR_MESSAGE,
+  INVALID_ASSIGNMENT_COMMAND_MESSAGE,
+  NO_ACTIVE_ASSIGNMENT_MESSAGE,
+  TASK_ACCEPTED_MESSAGE,
+  TASK_DECLINED_MESSAGE,
   UNRECOGNIZED_COLLECTOR_MESSAGE,
 } from "./twiml.js";
 import {
@@ -42,6 +46,7 @@ function createStore(overrides: Partial<WhatsAppWebhookStore> = {}): WhatsAppWeb
     findCollectorsByPhone: async () => [],
     markProcessed: async () => undefined,
     markError: async () => undefined,
+    processTaskResponse: async () => "no_active_session",
     ...overrides,
   };
 }
@@ -114,7 +119,7 @@ describe("Twilio WhatsApp webhook", () => {
     assert.equal(response.status, 403);
   });
 
-  it("recognizes a collector and returns the configured TwiML message", async () => {
+  it("recognizes a collector and reports that no task is awaiting a response", async () => {
     const lookup = tracked(async (_phone: string) => [
       { id: "collector-1", organizationId: "organization-1" },
     ]);
@@ -122,7 +127,7 @@ describe("Twilio WhatsApp webhook", () => {
     const response = await execute(createRequest(), store);
 
     assert.equal(response.status, 200);
-    assert.match(response.body, new RegExp(RECOGNIZED_COLLECTOR_MESSAGE));
+    assert.match(response.body, new RegExp(NO_ACTIVE_ASSIGNMENT_MESSAGE));
     assert.deepEqual(lookup.calls, [["+919000000001"]]);
   });
 
@@ -150,12 +155,16 @@ describe("Twilio WhatsApp webhook", () => {
   it("does not process a duplicate MessageSid twice", async () => {
     const lookup = tracked(async (_phone: string) => []);
     const store = createStore({
-      claim: async () => ({ kind: "duplicate", processingStatus: "recognized" }),
+      claim: async () => ({
+        kind: "duplicate",
+        processingStatus: "recognized",
+        responseCode: "accepted",
+      }),
       findCollectorsByPhone: lookup,
     });
     const response = await execute(createRequest(), store);
 
-    assert.match(response.body, new RegExp(RECOGNIZED_COLLECTOR_MESSAGE));
+    assert.match(response.body, new RegExp(TASK_ACCEPTED_MESSAGE));
     assert.equal(lookup.calls.length, 0);
   });
 
@@ -180,36 +189,24 @@ describe("Twilio WhatsApp webhook", () => {
 
   it("persists organization identity only from the matched collector", async () => {
     const collector = { id: "collector-1", organizationId: "trusted-organization" };
-    const markProcessed = tracked(
-      async (
-        _messageSid: string,
-        _status: "recognized" | "unrecognized",
-        _collector?: typeof collector,
-      ) => undefined,
-    );
+    const processTaskResponse = tracked(async () => "no_active_session" as const);
     const store = createStore({
       findCollectorsByPhone: async () => [collector],
-      markProcessed,
+      processTaskResponse,
     });
     await execute(createRequest(), store);
 
-    assert.deepEqual(markProcessed.calls, [
-      [baseParameters.MessageSid, "recognized", collector],
+    assert.deepEqual(processTaskResponse.calls, [
+      [collector, baseParameters.MessageSid, baseParameters.Body],
     ]);
   });
 
   it("ignores an organization ID spoofed inside Body", async () => {
     const collector = { id: "collector-1", organizationId: "trusted-organization" };
-    const markProcessed = tracked(
-      async (
-        _messageSid: string,
-        _status: "recognized" | "unrecognized",
-        _collector?: typeof collector,
-      ) => undefined,
-    );
+    const processTaskResponse = tracked(async () => "no_active_session" as const);
     const store = createStore({
       findCollectorsByPhone: async () => [collector],
-      markProcessed,
+      processTaskResponse,
     });
     const spoofed: Record<string, string> = {
       ...baseParameters,
@@ -217,7 +214,7 @@ describe("Twilio WhatsApp webhook", () => {
     };
     await execute(createRequest(spoofed), store);
 
-    assert.deepEqual(markProcessed.calls, [[spoofed.MessageSid, "recognized", collector]]);
+    assert.deepEqual(processTaskResponse.calls, [[collector, spoofed.MessageSid, spoofed.Body]]);
   });
 
   it("detects media metadata without downloading or storing its URL", async () => {
@@ -273,5 +270,144 @@ describe("Twilio WhatsApp webhook", () => {
     assert.deepEqual(markError.calls, [
       [baseParameters.MessageSid, "ambiguous_collector"],
     ]);
+  });
+
+  for (const [label, body] of [
+    ["exact case", "ACCEPT"],
+    ["lowercase", "accept"],
+    ["surrounding whitespace", "  ACCEPT  "],
+  ]) {
+    it(`accepts an assignment using ${label}`, async () => {
+      const processTaskResponse = tracked(async () => "accepted" as const);
+      const collector = { id: "collector-1", organizationId: "organization-1" };
+      const response = await execute(
+        createRequest({ ...baseParameters, Body: body }),
+        createStore({
+          findCollectorsByPhone: async () => [collector],
+          processTaskResponse,
+        }),
+      );
+      assert.match(response.body, new RegExp(TASK_ACCEPTED_MESSAGE));
+      assert.deepEqual(processTaskResponse.calls, [[collector, baseParameters.MessageSid, body]]);
+    });
+  }
+
+  it("declines an assignment and confirms only after persistence succeeds", async () => {
+    const collector = { id: "collector-1", organizationId: "organization-1" };
+    const response = await execute(
+      createRequest({ ...baseParameters, Body: "DECLINE" }),
+      createStore({
+        findCollectorsByPhone: async () => [collector],
+        processTaskResponse: async () => "declined",
+      }),
+    );
+    assert.match(response.body, new RegExp(TASK_DECLINED_MESSAGE));
+  });
+
+  it("handles zero, expired, and cancelled active sessions safely", async () => {
+    for (const simulatedState of ["zero", "expired", "cancelled"]) {
+      const response = await execute(
+        createRequest({ ...baseParameters, Body: "ACCEPT" }),
+        createStore({
+          findCollectorsByPhone: async () => [
+            { id: "collector-1", organizationId: "organization-1" },
+          ],
+          processTaskResponse: async () => {
+            assert.ok(simulatedState);
+            return "no_active_session";
+          },
+        }),
+      );
+      assert.match(response.body, new RegExp(NO_ACTIVE_ASSIGNMENT_MESSAGE));
+    }
+  });
+
+  it("does not guess when multiple sessions are active", async () => {
+    const logs: Array<{ errorCode?: string }> = [];
+    const response = await handleWhatsAppWebhook(
+      createRequest({ ...baseParameters, Body: "ACCEPT" }),
+      {
+        authToken: AUTH_TOKEN,
+        validateSignature: () => true,
+        store: createStore({
+          findCollectorsByPhone: async () => [
+            { id: "collector-1", organizationId: "organization-1" },
+          ],
+          processTaskResponse: async () => "ambiguous_session",
+        }),
+        log: (entry) => logs.push(entry),
+      },
+    );
+    assert.match(response.body, new RegExp(AMBIGUOUS_ASSIGNMENT_MESSAGE));
+    assert.ok(logs.some((entry) => entry.errorCode === "ambiguous_assignment_session"));
+  });
+
+  it("prompts for ACCEPT or DECLINE when an active session receives another command", async () => {
+    const response = await execute(
+      createRequest({ ...baseParameters, Body: "maybe later" }),
+      createStore({
+        findCollectorsByPhone: async () => [
+          { id: "collector-1", organizationId: "organization-1" },
+        ],
+        processTaskResponse: async () => "invalid_command",
+      }),
+    );
+    assert.match(response.body, new RegExp(INVALID_ASSIGNMENT_COMMAND_MESSAGE));
+  });
+
+  it("fails safely when the atomic task update or event insertion fails", async () => {
+    for (const failure of ["task_update_failed", "event_insert_failed"]) {
+      const response = await execute(
+        createRequest({ ...baseParameters, Body: "ACCEPT" }),
+        createStore({
+          findCollectorsByPhone: async () => [
+            { id: "collector-1", organizationId: "organization-1" },
+          ],
+          processTaskResponse: async () => { throw new Error(failure); },
+        }),
+      );
+      assert.equal(response.status, 500);
+      assert.match(response.body, new RegExp(GENERIC_ERROR_MESSAGE));
+      assert.doesNotMatch(response.body, new RegExp(failure));
+    }
+  });
+
+  it("blocks a cross-tenant session through the organization-scoped store result", async () => {
+    const collector = { id: "collector-1", organizationId: "trusted-organization" };
+    const processTaskResponse = tracked(async (
+      _collector: typeof collector,
+      _messageSid: string,
+      _body: string,
+    ) => "no_active_session" as const);
+    await execute(
+      createRequest({ ...baseParameters, Body: "organization_id=other-tenant ACCEPT" }),
+      createStore({
+        findCollectorsByPhone: async () => [collector],
+        processTaskResponse,
+      }),
+    );
+    assert.deepEqual(processTaskResponse.calls[0]?.[0], collector);
+  });
+
+  it("does not apply repeated ACCEPT or DECLINE deliveries twice", async () => {
+    for (const responseCode of ["accepted", "declined"] as const) {
+      const processTaskResponse = tracked(async () => responseCode);
+      const response = await execute(
+        createRequest({ ...baseParameters, Body: responseCode.toUpperCase() }),
+        createStore({
+          claim: async () => ({
+            kind: "duplicate",
+            processingStatus: "recognized",
+            responseCode,
+          }),
+          processTaskResponse,
+        }),
+      );
+      assert.equal(processTaskResponse.calls.length, 0);
+      assert.match(
+        response.body,
+        new RegExp(responseCode === "accepted" ? TASK_ACCEPTED_MESSAGE : TASK_DECLINED_MESSAGE),
+      );
+    }
   });
 });

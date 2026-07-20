@@ -28,6 +28,10 @@ describe("Vercel routing", () => {
       sourceMatchesPath(fallback.source, "/api/twilio/whatsapp"),
       false,
     );
+    assert.equal(
+      sourceMatchesPath(fallback.source, "/api/twilio/assign-task"),
+      false,
+    );
     assert.equal(sourceMatchesPath(fallback.source, "/dashboard/tasks"), true);
   });
 

@@ -29,6 +29,7 @@ import { TaskDetailDrawer } from "@/components/tasks/task-detail-drawer";
 import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, TriangleAlert as AlertTriangle, CircleAlert as AlertCircle, Eye, Pencil, Ban, Trash2, ClipboardCheck, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { sendWhatsAppTaskAssignment } from "@/lib/whatsapp-assignment";
 
 export const Route = createFileRoute("/tasks")({
   validateSearch: (search: Record<string, unknown>): { query?: string } => ({
@@ -80,6 +81,7 @@ function TasksPage() {
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
+  const [whatsappSendingTaskId, setWhatsappSendingTaskId] = useState<string | null>(null);
 
   const collectors = useCollectorStore();
   const collectorNames = useMemo(() => Array.from(new Set(collectors.map((c) => c.name))), [collectors]);
@@ -154,7 +156,7 @@ function TasksPage() {
     }
   }
 
-  async function handleDrawerAction(action: "edit" | "assign" | "reassign" | "cancel" | "delete" | "resubmit" | "export", collector?: string) {
+  async function handleDrawerAction(action: "edit" | "assign" | "reassign" | "whatsapp" | "cancel" | "delete" | "resubmit" | "export", collector?: string) {
     if (!selectedTask) return;
     if (action === "edit") {
       setEditingTask(selectedTask);
@@ -175,6 +177,21 @@ function TasksPage() {
       if (action === "reassign" && collector) {
         await taskStoreActions.reassignCollector(selectedTask.id, collector);
         toast.success("Collector reassigned", { description: `${selectedTask.title} is now with ${collector}.` });
+      }
+      if (action === "whatsapp") {
+        if (whatsappSendingTaskId) return;
+        setWhatsappSendingTaskId(selectedTask.id);
+        try {
+          const result = await sendWhatsAppTaskAssignment(selectedTask.id);
+          if (result.duplicate) {
+            toast("Assignment already sent", { description: "The active WhatsApp assignment was not sent twice." });
+          } else {
+            toast.success("WhatsApp assignment sent", { description: `${selectedTask.assignee ?? "The collector"} can reply ACCEPT or DECLINE.` });
+          }
+          await taskStoreActions.refresh();
+        } finally {
+          setWhatsappSendingTaskId(null);
+        }
       }
       if (action === "cancel") {
         await taskStoreActions.cancelTask(selectedTask.id);
@@ -458,6 +475,7 @@ function TasksPage() {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         collectors={computeAssignableCollectors(collectors)}
+        whatsappSending={whatsappSendingTaskId === liveSelectedTask?.id}
         onAction={handleDrawerAction}
       />
 

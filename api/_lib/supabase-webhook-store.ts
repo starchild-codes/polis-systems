@@ -3,6 +3,7 @@ import type {
   CollectorIdentity,
   WebhookEventClaim,
   WebhookProcessingStatus,
+  WebhookResponseCode,
   WhatsAppWebhookStore,
 } from "./whatsapp-webhook.js";
 
@@ -12,6 +13,7 @@ export interface WhatsAppServerConfig {
   twilioAccountSid: string;
   twilioAuthToken: string;
   twilioWhatsAppFrom: string;
+  twilioTaskAssignmentContentSid?: string;
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
 }
@@ -31,7 +33,11 @@ export function loadWhatsAppServerConfig(
     if (!value) throw new Error(`missing_server_configuration:${name}`);
   }
 
-  return required as WhatsAppServerConfig;
+  return {
+    ...(required as Omit<WhatsAppServerConfig, "twilioTaskAssignmentContentSid">),
+    twilioTaskAssignmentContentSid:
+      environment.TWILIO_TASK_ASSIGNMENT_CONTENT_SID?.trim() || undefined,
+  };
 }
 
 export function createWebhookSupabaseClient(config: WhatsAppServerConfig): SupabaseClient {
@@ -56,7 +62,7 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
 
     const { data, error: lookupError } = await this.supabase
       .from("whatsapp_webhook_events")
-      .select("processing_status")
+      .select("processing_status, response_code")
       .eq("twilio_message_sid", messageSid)
       .single();
 
@@ -64,6 +70,7 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
     return {
       kind: "duplicate",
       processingStatus: data.processing_status as WebhookProcessingStatus,
+      responseCode: data.response_code as WebhookResponseCode | null,
     };
   }
 
@@ -85,6 +92,7 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
     messageSid: string,
     status: "recognized" | "unrecognized",
     collector?: CollectorIdentity,
+    responseCode?: WebhookResponseCode,
   ): Promise<void> {
     const { error } = await this.supabase
       .from("whatsapp_webhook_events")
@@ -92,6 +100,7 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
         processing_status: status,
         collector_id: collector?.id || null,
         organization_id: collector?.organizationId || null,
+        response_code: responseCode || null,
         error_code: null,
       })
       .eq("twilio_message_sid", messageSid);
@@ -106,5 +115,23 @@ export class SupabaseWhatsAppWebhookStore implements WhatsAppWebhookStore {
       .eq("twilio_message_sid", messageSid);
 
     if (error) throw new Error("event_error_update_failed");
+  }
+
+  async processTaskResponse(
+    collector: CollectorIdentity,
+    messageSid: string,
+    body: string,
+  ): Promise<WebhookResponseCode> {
+    const { data, error } = await this.supabase.rpc("process_whatsapp_task_response", {
+      p_collector_id: collector.id,
+      p_organization_id: collector.organizationId,
+      p_inbound_message_sid: messageSid,
+      p_action: body.trim().toLowerCase(),
+    });
+    if (error) throw new Error("task_response_failed");
+    const row = Array.isArray(data) ? data[0] : data;
+    const result = row?.result as WebhookResponseCode | undefined;
+    if (!result) throw new Error("task_response_failed");
+    return result;
   }
 }
