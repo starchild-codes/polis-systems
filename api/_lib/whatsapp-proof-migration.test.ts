@@ -18,15 +18,20 @@ const activeSessionProtectionUrl = new URL(
   "../../supabase/migrations/20260720180000_protect_active_whatsapp_proof_session.sql",
   import.meta.url,
 );
+const proofPhotoTransitionFixUrl = new URL(
+  "../../supabase/migrations/20260721100000_fix_whatsapp_proof_photo_transition.sql",
+  import.meta.url,
+);
 
 async function sql() {
-  const [migration, baseline, hardening, activeSessionProtection] = await Promise.all([
+  const [migration, baseline, hardening, activeSessionProtection, proofPhotoTransitionFix] = await Promise.all([
     readFile(migrationUrl, "utf8"),
     readFile(baselineUrl, "utf8"),
     readFile(hardeningUrl, "utf8"),
     readFile(activeSessionProtectionUrl, "utf8"),
+    readFile(proofPhotoTransitionFixUrl, "utf8"),
   ]);
-  return { migration, baseline, hardening, activeSessionProtection };
+  return { migration, baseline, hardening, activeSessionProtection, proofPhotoTransitionFix };
 }
 
 describe("WhatsApp proof migration contract", () => {
@@ -102,5 +107,66 @@ describe("WhatsApp proof migration contract", () => {
     assert.match(activeSessionProtection, /conversation_state IN[\s\S]*awaiting_before_photo[\s\S]*awaiting_after_photo[\s\S]*awaiting_details/iu);
     assert.match(activeSessionProtection, /RETURN QUERY SELECT 'collector_busy'/iu);
     assert.match(activeSessionProtection, /proof_step = NULL/iu);
+  });
+
+  it("accepts the authoritative photo conversation states without requiring proof_step", async () => {
+    const { proofPhotoTransitionFix } = await sql();
+    assert.match(
+      proofPhotoTransitionFix,
+      /p_photo_kind = 'before'[\s\S]*conversation_state <> 'awaiting_before_photo'[^;]*[\s\S]*before_photo_path IS NOT NULL/iu,
+    );
+    assert.match(
+      proofPhotoTransitionFix,
+      /SET before_photo_path = p_object_path,[\s\S]*conversation_state = next_state,[\s\S]*proof_step = NULL/iu,
+    );
+    assert.match(
+      proofPhotoTransitionFix,
+      /ELSE\s+IF target_session\.conversation_state <> 'awaiting_after_photo'[^;]*[\s\S]*before_photo_path IS NULL[\s\S]*after_photo_path IS NOT NULL/iu,
+    );
+    assert.match(
+      proofPhotoTransitionFix,
+      /next_state := 'awaiting_details'[^;]*;[\s\S]*SET after_photo_path = p_object_path,[\s\S]*proof_step = 'waste_type'/iu,
+    );
+    assert.doesNotMatch(
+      proofPhotoTransitionFix,
+      /target_session\.proof_step\s*(?:<>|=|IS)/iu,
+    );
+  });
+
+  it("preserves photo transition guards, locking, idempotency, and tenant consistency", async () => {
+    const { proofPhotoTransitionFix } = await sql();
+    assert.match(proofPhotoTransitionFix, /processing_status = 'received'[\s\S]*FOR UPDATE/iu);
+    assert.match(proofPhotoTransitionFix, /RAISE EXCEPTION 'webhook_event_not_claimed'/iu);
+    assert.match(proofPhotoTransitionFix, /assignment_status <> 'accepted'/iu);
+    assert.match(proofPhotoTransitionFix, /expires_at IS NULL[\s\S]*expires_at <= now\(\)/iu);
+    assert.match(proofPhotoTransitionFix, /task\.organization_id = p_organization_id/iu);
+    assert.match(proofPhotoTransitionFix, /task\.collector_id = p_collector_id/iu);
+    assert.match(proofPhotoTransitionFix, /target_task\.status NOT IN[\s\S]*accepted[\s\S]*in_progress/iu);
+    assert.match(proofPhotoTransitionFix, /before_photo_path IS NOT NULL/iu);
+    assert.match(proofPhotoTransitionFix, /after_photo_path IS NOT NULL/iu);
+    assert.match(proofPhotoTransitionFix, /invalid_proof_object_path/iu);
+    assert.match(proofPhotoTransitionFix, /last_inbound_message_sid = p_inbound_message_sid/iu);
+    assert.match(proofPhotoTransitionFix, /INSERT INTO public\.task_events/iu);
+  });
+
+  it("finalizes the webhook ledger with an unambiguous response and keeps execution service-role-only", async () => {
+    const { proofPhotoTransitionFix } = await sql();
+    assert.match(proofPhotoTransitionFix, /final_response_code text;/iu);
+    assert.match(
+      proofPhotoTransitionFix,
+      /UPDATE public\.whatsapp_webhook_events[\s\S]*processing_status = 'recognized'[\s\S]*response_code = final_response_code/iu,
+    );
+    assert.doesNotMatch(proofPhotoTransitionFix, /response_code\s*=\s*response_code/iu);
+    assert.match(proofPhotoTransitionFix, /RETURN QUERY SELECT final_response_code/iu);
+    assert.match(proofPhotoTransitionFix, /SECURITY DEFINER[\s\S]*SET search_path = pg_catalog, public/iu);
+    assert.match(
+      proofPhotoTransitionFix,
+      /REVOKE ALL ON FUNCTION public\.store_whatsapp_proof_photo\(uuid, uuid, text, text, text\)[\s\S]*FROM PUBLIC, anon, authenticated;/iu,
+    );
+    assert.match(
+      proofPhotoTransitionFix,
+      /GRANT EXECUTE ON FUNCTION public\.store_whatsapp_proof_photo\(uuid, uuid, text, text, text\)[\s\S]*TO service_role;/iu,
+    );
+    assert.doesNotMatch(proofPhotoTransitionFix, /(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+)?public\.(?:tasks|whatsapp_sessions|task_events|whatsapp_webhook_events)[\s\S]*VALUES\s*\([^)]*test/iu);
   });
 });
