@@ -20,15 +20,21 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, X, ClipboardCheck, Clock3, CircleCheck as CheckCircle2, Circle as XCircle, MapPin, User, Phone, CircleAlert as AlertCircle, Image as ImageIcon, Weight, MessageSquare, FlaskConical, Trash2 } from "lucide-react";
+import { Search, X, ClipboardCheck, Clock3, CircleCheck as CheckCircle2, Circle as XCircle, MapPin, User, Phone, CircleAlert as AlertCircle, Image as ImageIcon, Weight, MessageSquare, FlaskConical, Trash2, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
-  fetchSubmissions, approveSubmission, rejectSubmission, createTestSubmission,
-  deleteTestSubmission, isTestSubmission,
+  fetchSubmissions, createTestSubmission, deleteTestSubmission, isTestSubmission,
   fetchSubmissionProofUrls,
   type SubmissionProofUrls,
   type SubmissionWithRelations,
 } from "@/lib/submission-store";
+import {
+  approveSubmission,
+  rejectSubmission,
+  retryWhatsAppReviewNotification,
+  REJECTION_REASON_MAX_LENGTH,
+  type ReviewNotificationDelivery,
+} from "@/lib/review-actions";
 import { useTaskStore } from "@/lib/task-store";
 import { useCollectorStore } from "@/lib/collector-store";
 import type { Collector, Task } from "@/lib/mock-data";
@@ -71,6 +77,9 @@ function ReviewPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [testSheetOpen, setTestSheetOpen] = useState(false);
   const [cleanupTarget, setCleanupTarget] = useState<SubmissionWithRelations | null>(null);
+  const [deliveryFeedback, setDeliveryFeedback] = useState<
+    (ReviewNotificationDelivery & { submissionId: string }) | null
+  >(null);
 
   const loadSubmissions = useCallback(async () => {
     setLoading(true);
@@ -140,6 +149,7 @@ function ReviewPage() {
   }
 
   function openSubmission(id: string) {
+    if (deliveryFeedback?.submissionId !== id) setDeliveryFeedback(null);
     setSelectedId(id);
     setDrawerOpen(true);
   }
@@ -155,12 +165,17 @@ function ReviewPage() {
     if (!selected || !user) return;
     setActionLoading(true);
     try {
-      await approveSubmission(selected.id, user.id);
-      toast.success("Submission approved", {
-        description: `${selected.task?.title ?? "Task"} marked as approved.`,
-      });
-      closeDrawer(false);
+      const outcome = await approveSubmission(selected.id);
+      setDeliveryFeedback({ submissionId: selected.id, ...outcome.notification });
       await loadSubmissions();
+      if (outcome.notification.status === "sent") {
+        toast.success("Submission approved", { description: outcome.notification.message });
+        closeDrawer(false);
+      } else {
+        toast.warning("Submission approved; WhatsApp needs attention", {
+          description: outcome.notification.message,
+        });
+      }
     } catch (err) {
       toast.error("Failed to approve", {
         description: err instanceof Error ? err.message : undefined,
@@ -175,17 +190,42 @@ function ReviewPage() {
     if (!selected || !user) return;
     setActionLoading(true);
     try {
-      await rejectSubmission(selected.id, user.id, reason);
-      toast.error("Submission rejected", {
-        description: `${selected.task?.title ?? "Task"} returned to collector.`,
-      });
-      closeDrawer(false);
+      const outcome = await rejectSubmission(selected.id, reason);
+      setDeliveryFeedback({ submissionId: selected.id, ...outcome.notification });
       await loadSubmissions();
+      if (outcome.notification.status === "sent") {
+        toast.success("Submission rejected", { description: outcome.notification.message });
+        closeDrawer(false);
+      } else {
+        toast.warning("Submission rejected; WhatsApp needs attention", {
+          description: outcome.notification.message,
+        });
+      }
     } catch (err) {
       toast.error("Failed to reject", {
         description: err instanceof Error ? err.message : undefined,
       });
       await loadSubmissions();
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleRetryNotification() {
+    if (!deliveryFeedback?.retryable) return;
+    setActionLoading(true);
+    try {
+      const outcome = await retryWhatsAppReviewNotification(deliveryFeedback.notificationId);
+      setDeliveryFeedback({ submissionId: deliveryFeedback.submissionId, ...outcome.notification });
+      if (outcome.notification.status === "sent") {
+        toast.success("WhatsApp update sent", { description: outcome.notification.message });
+      } else {
+        toast.warning("WhatsApp update not sent", { description: outcome.notification.message });
+      }
+    } catch (err) {
+      toast.error("Could not retry WhatsApp", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally {
       setActionLoading(false);
     }
@@ -400,6 +440,8 @@ function ReviewPage() {
         onDeleteTest={(submission) => setCleanupTarget(submission)}
         canManageTestData={organizationRole === "admin"}
         actionLoading={actionLoading}
+        deliveryFeedback={deliveryFeedback?.submissionId === selected?.id ? deliveryFeedback : null}
+        onRetryNotification={handleRetryNotification}
       />
 
       <AlertDialog open={!!cleanupTarget} onOpenChange={(open) => !open && setCleanupTarget(null)}>
@@ -501,6 +543,8 @@ function SubmissionDetailDrawer({
   onDeleteTest,
   canManageTestData,
   actionLoading,
+  deliveryFeedback,
+  onRetryNotification,
 }: {
   submission: SubmissionWithRelations | null;
   open: boolean;
@@ -510,6 +554,8 @@ function SubmissionDetailDrawer({
   onDeleteTest: (submission: SubmissionWithRelations) => void;
   canManageTestData: boolean;
   actionLoading: boolean;
+  deliveryFeedback: ReviewNotificationDelivery | null;
+  onRetryNotification: () => void;
 }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -560,11 +606,18 @@ function SubmissionDetailDrawer({
   const collector = submission.collector;
 
   function submitReject() {
-    if (!rejectReason.trim()) {
+    const reason = rejectReason.trim();
+    if (!reason) {
       toast.error("Rejection reason required", { description: "Please provide a reason before rejecting." });
       return;
     }
-    onReject(rejectReason);
+    if (reason.length > REJECTION_REASON_MAX_LENGTH) {
+      toast.error("Rejection reason is too long", {
+        description: `Use ${REJECTION_REASON_MAX_LENGTH} characters or fewer.`,
+      });
+      return;
+    }
+    onReject(reason);
   }
 
   return (
@@ -671,6 +724,47 @@ function SubmissionDetailDrawer({
             </section>
           )}
 
+          {deliveryFeedback && (
+            <section aria-live="polite">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                WhatsApp Update
+              </h3>
+              <div className={`rounded-xl border p-4 ${
+                deliveryFeedback.status === "sent"
+                  ? "border-success/30 bg-success/5"
+                  : "border-warning/30 bg-warning/5"
+              }`}>
+                <div className="flex items-start gap-3">
+                  <Send className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {deliveryFeedback.status === "sent"
+                        ? "Review saved and WhatsApp sent"
+                        : deliveryFeedback.status === "sending"
+                          ? "Sending WhatsApp update..."
+                          : "Review saved, but WhatsApp delivery failed"}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {deliveryFeedback.message}
+                    </p>
+                    {deliveryFeedback.status === "failed" && deliveryFeedback.retryable && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 gap-1.5"
+                        onClick={onRetryNotification}
+                        disabled={actionLoading}
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 ${actionLoading ? "animate-spin" : ""}`} />
+                        Retry WhatsApp notification
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Reject form */}
           {isPending && showRejectForm && (
             <section>
@@ -681,8 +775,12 @@ function SubmissionDetailDrawer({
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Explain why this submission is being returned to the collector..."
                   className="min-h-[100px]"
+                  maxLength={REJECTION_REASON_MAX_LENGTH}
                 />
-                <p className="text-xs text-muted-foreground">This reason is stored in submissions.rejection_reason and recorded in task_events.metadata.</p>
+                <div className="flex items-start justify-between gap-3 text-xs text-muted-foreground">
+                  <p>This reason is stored in submissions.rejection_reason and recorded in task_events.metadata.</p>
+                  <span className="shrink-0 tabular-nums">{rejectReason.length}/{REJECTION_REASON_MAX_LENGTH}</span>
+                </div>
               </div>
             </section>
           )}
@@ -715,7 +813,7 @@ function SubmissionDetailDrawer({
                   onClick={submitReject}
                   disabled={actionLoading || !rejectReason.trim()}
                 >
-                  {actionLoading ? "Rejecting..." : "Confirm rejection"}
+                  {actionLoading ? "Saving review and sending WhatsApp update..." : "Confirm rejection"}
                 </Button>
               </>
             ) : (
@@ -732,7 +830,7 @@ function SubmissionDetailDrawer({
                   onClick={onApprove}
                   disabled={actionLoading}
                 >
-                  {actionLoading ? "Approving..." : "Approve submission"}
+                  {actionLoading ? "Saving review and sending WhatsApp update..." : "Approve submission"}
                 </Button>
               </>
             ))}

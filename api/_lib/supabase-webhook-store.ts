@@ -21,6 +21,8 @@ export interface WhatsAppServerConfig {
   twilioAuthToken: string;
   twilioWhatsAppFrom: string;
   twilioTaskAssignmentContentSid?: string;
+  twilioReviewApprovedContentSid?: string;
+  twilioReviewRejectedContentSid?: string;
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
   whatsappMediaMaxBytes: number;
@@ -47,9 +49,18 @@ export function loadWhatsAppServerConfig(
     : DEFAULT_WHATSAPP_MEDIA_MAX_BYTES;
 
   return {
-    ...(required as Omit<WhatsAppServerConfig, "twilioTaskAssignmentContentSid">),
+    ...(required as Omit<
+      WhatsAppServerConfig,
+      | "twilioTaskAssignmentContentSid"
+      | "twilioReviewApprovedContentSid"
+      | "twilioReviewRejectedContentSid"
+    >),
     twilioTaskAssignmentContentSid:
       environment.TWILIO_TASK_ASSIGNMENT_CONTENT_SID?.trim() || undefined,
+    twilioReviewApprovedContentSid:
+      environment.TWILIO_REVIEW_APPROVED_CONTENT_SID?.trim() || undefined,
+    twilioReviewRejectedContentSid:
+      environment.TWILIO_REVIEW_REJECTED_CONTENT_SID?.trim() || undefined,
     whatsappMediaMaxBytes,
   };
 }
