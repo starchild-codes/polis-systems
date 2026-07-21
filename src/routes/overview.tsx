@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeToOperationalDataChanges } from "@/lib/operational-events";
 import type { TaskStatus } from "@/lib/mock-data";
+import { getUserFacingError } from "@/lib/safe-display";
 
 export const Route = createFileRoute("/overview")({
   head: () => ({
@@ -107,7 +108,7 @@ function OverviewPage() {
         collectorName: submission.collectors?.name ?? "—",
       })));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load overview");
+      setError(getUserFacingError(err, "The overview could not be loaded. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ function OverviewPage() {
         <div className="mx-4 mt-5 flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface sm:mx-5 lg:mx-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10"><AlertCircle className="h-5 w-5 text-destructive" /></div>
           <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load overview</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{getUserFacingError(error, "The overview could not be loaded. Please try again.")}</p>
         </div>
       </>
     );

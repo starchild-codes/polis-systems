@@ -17,6 +17,7 @@ import type {
   CollectorType,
   Zone,
 } from "@/lib/mock-data";
+import { getUserFacingError } from "@/lib/safe-display";
 
 // ─── Store state ────────────────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ async function loadCollectors(): Promise<void> {
     state = {
       ...state,
       loading: false,
-      error: err instanceof Error ? err.message : "Failed to load collectors",
+      error: getUserFacingError(err, "Collectors could not be loaded. Please try again."),
     };
   }
   emit();

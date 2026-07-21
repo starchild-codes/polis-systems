@@ -38,6 +38,7 @@ import {
 import { useTaskStore } from "@/lib/task-store";
 import { useCollectorStore } from "@/lib/collector-store";
 import { formatSubmissionQuantity } from "@/lib/submission-quantity";
+import { getDisplayActorName, getSafeDisplayText, getUserFacingError } from "@/lib/safe-display";
 import type { Collector, Task } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/review")({
@@ -89,7 +90,7 @@ function ReviewPage() {
       const data = await fetchSubmissions();
       setSubmissions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load submissions");
+      setError(getUserFacingError(err, "Submissions could not be loaded. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -179,7 +180,7 @@ function ReviewPage() {
       }
     } catch (err) {
       toast.error("Failed to approve", {
-        description: err instanceof Error ? err.message : undefined,
+        description: getUserFacingError(err, "The submission could not be approved. Please try again."),
       });
       await loadSubmissions();
     } finally {
@@ -204,7 +205,7 @@ function ReviewPage() {
       }
     } catch (err) {
       toast.error("Failed to reject", {
-        description: err instanceof Error ? err.message : undefined,
+        description: getUserFacingError(err, "The submission could not be rejected. Please try again."),
       });
       await loadSubmissions();
     } finally {
@@ -225,7 +226,7 @@ function ReviewPage() {
       }
     } catch (err) {
       toast.error("Could not retry WhatsApp", {
-        description: err instanceof Error ? err.message : undefined,
+        description: getUserFacingError(err, "The WhatsApp update could not be retried. Please try again."),
       });
     } finally {
       setActionLoading(false);
@@ -244,7 +245,7 @@ function ReviewPage() {
       setSelectedId(submissionId);
       setDrawerOpen(true);
     } catch (err) {
-      toast.error("Failed to create test submission", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to create test submission", { description: getUserFacingError(err, "The test submission could not be created. Please try again.") });
       await loadSubmissions();
     } finally {
       setActionLoading(false);
@@ -260,7 +261,7 @@ function ReviewPage() {
       closeDrawer(false);
       await loadSubmissions();
     } catch (err) {
-      toast.error("Failed to remove test submission", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to remove test submission", { description: getUserFacingError(err, "The test submission could not be removed. Please try again.") });
       await loadSubmissions();
     } finally {
       setCleanupTarget(null);
@@ -593,7 +594,7 @@ function SubmissionDetailDrawer({
       })
       .catch((error) => {
         if (active) {
-          setProofError(error instanceof Error ? error.message : "Proof images are unavailable.");
+          setProofError(getUserFacingError(error, "Proof images are unavailable."));
         }
       })
       .finally(() => {
@@ -716,6 +717,18 @@ function SubmissionDetailDrawer({
             </div>
           </section>
 
+          {submission.reviewStatus !== "pending" && (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Review Decision</h3>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-medium text-foreground">
+                  {submission.reviewStatus === "approved" ? "Approved" : "Rejected"} by {getDisplayActorName(submission.reviewerName)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(submission.reviewedAt)}</p>
+              </div>
+            </section>
+          )}
+
           {/* Rejection info for already-rejected */}
           {submission.reviewStatus === "rejected" && submission.rejectionReason && (
             <section>
@@ -750,7 +763,7 @@ function SubmissionDetailDrawer({
                           : "Review saved, but WhatsApp delivery failed"}
                     </p>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {deliveryFeedback.message}
+                      {getSafeDisplayText(deliveryFeedback.message, "The review was saved. Notification details are unavailable.")}
                     </p>
                     {deliveryFeedback.status === "failed" && deliveryFeedback.retryable && (
                       <Button
@@ -783,7 +796,7 @@ function SubmissionDetailDrawer({
                   maxLength={REJECTION_REASON_MAX_LENGTH}
                 />
                 <div className="flex items-start justify-between gap-3 text-xs text-muted-foreground">
-                  <p>This reason is stored in submissions.rejection_reason and recorded in task_events.metadata.</p>
+                  <p>This reason is stored with the review and its audit record.</p>
                   <span className="shrink-0 tabular-nums">{rejectReason.length}/{REJECTION_REASON_MAX_LENGTH}</span>
                 </div>
               </div>

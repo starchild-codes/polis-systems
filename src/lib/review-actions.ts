@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getUserFacingError } from "@/lib/safe-display";
 
 export const REJECTION_REASON_MAX_LENGTH = 500;
 
@@ -40,7 +41,7 @@ async function postReviewAction(
     error?: string;
   } | null;
   if (!response.ok || payload?.reviewSaved !== true || !payload.notification) {
-    throw new Error(payload?.error || "The review action could not be completed.");
+    throw new Error(getUserFacingError(payload?.error, "The review action could not be completed."));
   }
   return payload as ReviewDecisionOutcome;
 }

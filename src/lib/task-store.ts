@@ -22,6 +22,7 @@ import type {
   Priority,
   Zone,
 } from "@/lib/mock-data";
+import { getUserFacingError } from "@/lib/safe-display";
 
 // ─── Store state ────────────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ async function loadTasks(): Promise<void> {
     state = {
       ...state,
       loading: false,
-      error: err instanceof Error ? err.message : "Failed to load tasks",
+      error: getUserFacingError(err, "Tasks could not be loaded. Please try again."),
     };
   }
   emit();

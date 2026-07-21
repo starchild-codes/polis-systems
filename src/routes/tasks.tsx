@@ -30,6 +30,7 @@ import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, Triangle
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sendWhatsAppTaskAssignment } from "@/lib/whatsapp-assignment";
+import { getUserFacingError } from "@/lib/safe-display";
 
 export const Route = createFileRoute("/tasks")({
   validateSearch: (search: Record<string, unknown>): { query?: string } => ({
@@ -138,7 +139,7 @@ function TasksPage() {
       const task = await taskStoreActions.createTask(input);
       toast.success("Task created", { description: `${task.title} was added${task.assignee ? ` and assigned to ${task.assignee}` : " as a draft"}.` });
     } catch (err) {
-      toast.error("Failed to create task", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to create task", { description: getUserFacingError(err, "The task could not be created. Please try again.") });
     } finally {
       setSaving(false);
     }
@@ -150,7 +151,7 @@ function TasksPage() {
       await taskStoreActions.editTask(taskId, patch);
       toast.success("Task updated");
     } catch (err) {
-      toast.error("Failed to update task", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to update task", { description: getUserFacingError(err, "The task could not be updated. Please try again.") });
     } finally {
       setSaving(false);
     }
@@ -206,7 +207,7 @@ function TasksPage() {
         toast.success("Record exported", { description: "A summary export would be generated here in production." });
       }
     } catch (err) {
-      toast.error("Action failed", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Action failed", { description: getUserFacingError(err, "The task action could not be completed. Please try again.") });
     }
   }
 
@@ -216,7 +217,7 @@ function TasksPage() {
       await taskStoreActions.cancelTask(cancelTargetId);
       toast("Task canceled");
     } catch (err) {
-      toast.error("Failed to cancel task", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to cancel task", { description: getUserFacingError(err, "The task could not be canceled. Please try again.") });
     } finally {
       setCancelTargetId(null);
     }
@@ -229,7 +230,7 @@ function TasksPage() {
       toast.success("Task permanently deleted", { description: `${deleteTarget.title} and its task events were removed.` });
       setSelectedTask(null);
     } catch (err) {
-      toast.error("Could not delete task", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Could not delete task", { description: getUserFacingError(err, "The task could not be deleted. Please try again.") });
     } finally {
       setDeleteTarget(null);
     }
@@ -361,7 +362,7 @@ function TasksPage() {
           <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface">
             <AlertCircle className="h-6 w-6 text-destructive" />
             <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load tasks</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{getUserFacingError(error, "Tasks could not be loaded. Please try again.")}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => taskStoreActions.refresh()}>Retry</Button>
           </div>
         ) : tasks.length === 0 ? (

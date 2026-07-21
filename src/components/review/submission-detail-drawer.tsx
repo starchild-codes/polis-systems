@@ -21,6 +21,7 @@ import {
 } from "@/lib/mock-data";
 import type { SubmissionWithChecklist } from "@/lib/submission-store";
 import { cn } from "@/lib/utils";
+import { getDisplayActorName } from "@/lib/safe-display";
 
 export function SubmissionDetailDrawer({
   submission,
@@ -73,7 +74,7 @@ export function SubmissionDetailDrawer({
               <SheetTitle className="text-left">{submission.taskTitle}</SheetTitle>
               <ReviewStatusPill status={submission.status} />
             </div>
-            <SheetDescription className="text-left">{submission.id} · {task?.id ?? submission.taskId}</SheetDescription>
+            <SheetDescription className="text-left">Submitted {formatFriendlyDateTime(submission.submittedAt)}</SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 space-y-6 pb-6 text-sm">
@@ -172,7 +173,7 @@ export function SubmissionDetailDrawer({
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Reviewed by {submission.reviewer ?? "—"} · {submission.decidedAt ? formatFriendlyDateTime(submission.decidedAt) : "—"}
+                  {submission.status === "approved" ? "Approved" : "Rejected"} by {getDisplayActorName(submission.reviewer)} · {submission.decidedAt ? formatFriendlyDateTime(submission.decidedAt) : "—"}
                 </div>
                 {submission.status === "rejected" && submission.rejectionReason && (
                   <div className="text-xs text-foreground">

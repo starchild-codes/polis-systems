@@ -21,6 +21,7 @@ import {
   type Task, type Collector,
 } from "@/lib/mock-data";
 import { useTaskEvents } from "@/lib/task-store";
+import { getDisplayActorName, getSafeDisplayText } from "@/lib/safe-display";
 
 type DrawerAction = "edit" | "assign" | "reassign" | "whatsapp" | "cancel" | "delete" | "resubmit" | "export";
 
@@ -83,7 +84,7 @@ export function TaskDetailDrawer({
               <SheetTitle className="text-left">{task.title}</SheetTitle>
               <StatusBadge status={task.status} />
             </div>
-            <SheetDescription className="text-left">{task.id}</SheetDescription>
+            <SheetDescription className="text-left">{task.location || `${task.zone} zone`}</SheetDescription>
           </SheetHeader>
 
           <div className="space-y-6 px-5 py-5 text-sm sm:px-6">
@@ -147,7 +148,7 @@ export function TaskDetailDrawer({
             )}
 
             <section className="space-y-1 text-xs text-muted-foreground">
-              <div>Created by {task.createdBy} · {formatFriendlyDateTime(task.createdAt)}</div>
+              <div>Created by {getDisplayActorName(task.createdBy)} · {formatFriendlyDateTime(task.createdAt)}</div>
             </section>
 
             <section className="space-y-2">
@@ -156,7 +157,7 @@ export function TaskDetailDrawer({
                 {events.map((e) => (
                   <li key={e.id} className="relative text-sm">
                     <span className="absolute -left-[15px] top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-                    <div className="text-foreground">{e.message}</div>
+                    <div className="break-words text-foreground">{getSafeDisplayText(e.message, "Activity recorded")}</div>
                     <div className="text-xs text-muted-foreground">{formatFriendlyDateTime(e.timestamp)}</div>
                   </li>
                 ))}

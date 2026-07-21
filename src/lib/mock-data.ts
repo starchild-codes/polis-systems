@@ -178,6 +178,8 @@ export interface TaskEvent {
   taskId: string;
   timestamp: string;
   message: string;
+  /** Safe presentation label; internal actor IDs never leave the data mapper. */
+  actorName?: string | null;
 }
 
 // Fixed "now" for this pilot snapshot so derived metrics (overdue, daily trends) are deterministic.

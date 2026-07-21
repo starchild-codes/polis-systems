@@ -9,8 +9,13 @@ import type {
   WasteType,
 } from "@/lib/mock-data";
 import { buildDefaultChecklist } from "@/lib/mock-data";
-import { fetchTasks } from "@/lib/supabase-data";
+import {
+  fetchTasks,
+  resolveOrganizationActorNames,
+} from "@/lib/supabase-data";
+import { organizationActorKey } from "@/lib/actor-presentation";
 import type { Task } from "@/lib/mock-data";
+import { getUserFacingError } from "@/lib/safe-display";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +35,7 @@ export interface Submission {
   submittedAt: string | null;
   reviewStatus: ReviewStatus;
   reviewedBy: string | null;
+  reviewerName: string | null;
   reviewedAt: string | null;
   rejectionReason: string | null;
   createdAt: string;
@@ -100,6 +106,7 @@ interface SubmissionRow {
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
+  organization_id: string;
 }
 
 interface TaskRow {
@@ -150,6 +157,11 @@ export async function fetchSubmissions(): Promise<SubmissionWithRelations[]> {
 
   if (subError) throw new Error(subError.message);
   if (!rawSubs || rawSubs.length === 0) return [];
+  const submissionRows = rawSubs as SubmissionRow[];
+  const reviewerNames = await resolveOrganizationActorNames(submissionRows.flatMap((row) => row.reviewed_by ? [{
+    organizationId: row.organization_id,
+    actorId: row.reviewed_by,
+  }] : []));
 
   // Fetch related tasks
   const taskIds = [...new Set(rawSubs.map((s) => s.task_id))];
@@ -216,7 +228,7 @@ export async function fetchSubmissions(): Promise<SubmissionWithRelations[]> {
   }
 
   // Map submissions with relations
-  return (rawSubs as SubmissionRow[]).map((row) => ({
+  return submissionRows.map((row) => ({
     id: row.id,
     taskId: row.task_id,
     collectorId: row.collector_id,
@@ -230,6 +242,9 @@ export async function fetchSubmissions(): Promise<SubmissionWithRelations[]> {
     submittedAt: row.submitted_at,
     reviewStatus: row.review_status,
     reviewedBy: row.reviewed_by,
+    reviewerName: row.reviewed_by
+      ? reviewerNames.get(organizationActorKey(row.organization_id, row.reviewed_by)) ?? null
+      : null,
     reviewedAt: row.reviewed_at,
     rejectionReason: row.rejection_reason,
     createdAt: row.created_at,
@@ -259,7 +274,7 @@ export async function fetchSubmissionProofUrls(
     error?: string;
   } | null;
   if (!response.ok) {
-    throw new Error(payload?.error || "Proof images are temporarily unavailable.");
+    throw new Error(getUserFacingError(payload?.error, "Proof images are temporarily unavailable."));
   }
   return {
     beforeUrl: typeof payload?.beforeUrl === "string" ? payload.beforeUrl : null,
@@ -426,7 +441,7 @@ async function loadMockSubmissions(): Promise<void> {
         decidedAt: s.reviewedAt ?? undefined,
         status: s.reviewStatus,
         note: s.collectorNotes ?? undefined,
-        reviewer: s.reviewedBy ?? undefined,
+        reviewer: s.reviewerName ?? undefined,
         rejectionReason: (s.rejectionReason as RejectionReason | null) ?? undefined,
         rejectionNote: undefined,
       };

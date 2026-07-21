@@ -1,5 +1,6 @@
 import { useSyncExternalStore, useCallback } from "react";
 import { fetchZones, type ZoneRow } from "@/lib/supabase-data";
+import { getUserFacingError } from "@/lib/safe-display";
 
 // ─── Store state ────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ async function loadZones(): Promise<void> {
     state = {
       ...state,
       loading: false,
-      error: err instanceof Error ? err.message : "Failed to load zones",
+      error: getUserFacingError(err, "Zones could not be loaded. Please try again."),
     };
   }
   emit();

@@ -11,6 +11,18 @@ import type {
   WasteType,
   Zone,
 } from "@/lib/mock-data";
+import {
+  ORGANIZATION_MEMBER_LABEL,
+  getDisplayActorName,
+} from "@/lib/safe-display";
+import {
+  buildOrganizationActorNameMap,
+  formatTaskEventMessage,
+  organizationActorKey,
+  type ActorProfileRow,
+  type OrganizationActorRef,
+  type OrganizationMembershipActorRow,
+} from "@/lib/actor-presentation";
 
 // ─── Zone helpers ───────────────────────────────────────────────────────────
 
@@ -21,6 +33,37 @@ export interface ZoneRow {
 
 const zoneCache = new Map<string, string>(); // id → name
 const nameCache = new Map<string, string>(); // name → id (lowercased for lookup)
+
+export async function resolveOrganizationActorNames(
+  requested: OrganizationActorRef[],
+): Promise<Map<string, string>> {
+  const refs = [...new Map(requested.map((ref) => [organizationActorKey(ref.organizationId, ref.actorId), ref])).values()];
+  if (refs.length === 0) return new Map();
+
+  const organizationIds = [...new Set(refs.map((ref) => ref.organizationId))];
+  const actorIds = [...new Set(refs.map((ref) => ref.actorId))];
+  const { data: memberships, error: membershipError } = await supabase
+    .from("organization_members")
+    .select("organization_id, user_id, is_active")
+    .in("organization_id", organizationIds)
+    .in("user_id", actorIds)
+    .eq("is_active", true);
+  if (membershipError) throw membershipError;
+
+  const memberIds = [...new Set((memberships ?? []).map((membership) => membership.user_id))];
+  if (memberIds.length === 0) return new Map();
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", memberIds);
+  if (profileError) throw profileError;
+
+  return buildOrganizationActorNameMap(
+    refs,
+    (memberships ?? []) as OrganizationMembershipActorRow[],
+    (profiles ?? []) as ActorProfileRow[],
+  );
+}
 
 export async function fetchZones(): Promise<ZoneRow[]> {
   const { data, error } = await supabase
@@ -186,6 +229,7 @@ interface TaskRow {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  organization_id: string;
 }
 
 const collectorNameCache = new Map<string, string>();
@@ -200,7 +244,7 @@ export function cacheCollectorName(id: string, name: string) {
   collectorNameCache.set(id, name);
 }
 
-function mapTask(row: TaskRow): Task {
+function mapTask(row: TaskRow, actorNames: Map<string, string>): Task {
   return {
     id: row.id,
     title: row.title,
@@ -215,7 +259,9 @@ function mapTask(row: TaskRow): Task {
     assignee: row.collector_id
       ? collectorNameCache.get(row.collector_id) ?? "—"
       : undefined,
-    createdBy: row.created_by ?? "—",
+    createdBy: row.created_by
+      ? actorNames.get(organizationActorKey(row.organization_id, row.created_by)) ?? ORGANIZATION_MEMBER_LABEL
+      : ORGANIZATION_MEMBER_LABEL,
     createdAt: formatDbTimestamp(row.created_at),
     updatedAt: formatDbTimestamp(row.updated_at),
     dueAt: formatDbTimestamp(row.due_at),
@@ -233,7 +279,12 @@ export async function fetchTasks(): Promise<Task[]> {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(mapTask);
+  const rows = (data ?? []) as TaskRow[];
+  const actorNames = await resolveOrganizationActorNames(rows.flatMap((row) => row.created_by ? [{
+    organizationId: row.organization_id,
+    actorId: row.created_by,
+  }] : []));
+  return rows.map((row) => mapTask(row, actorNames));
 }
 
 export interface TaskInsert {
@@ -262,7 +313,12 @@ export async function insertTask(input: TaskInsert): Promise<Task> {
     .select("*")
     .single();
   if (error) throw error;
-  return mapTask(data as TaskRow);
+  const row = data as TaskRow;
+  const actorNames = await resolveOrganizationActorNames(row.created_by ? [{
+    organizationId: row.organization_id,
+    actorId: row.created_by,
+  }] : []);
+  return mapTask(row, actorNames);
 }
 
 export async function updateTask(
@@ -348,17 +404,49 @@ interface TaskEventRow {
   actor_id: string | null;
   metadata: { message?: string } | Record<string, unknown>;
   created_at: string;
+  organization_id: string;
 }
 
-function mapTaskEvent(row: TaskEventRow): TaskEvent {
-  const message =
-    (row.metadata as { message?: string })?.message ?? row.event_type;
+function mapTaskEvent(row: TaskEventRow, actorNames: Map<string, string>): TaskEvent {
+  const actorName = row.actor_id
+    ? actorNames.get(organizationActorKey(row.organization_id, row.actor_id)) ?? null
+    : null;
   return {
     id: row.id,
     taskId: row.task_id,
     timestamp: formatDbTimestamp(row.created_at),
-    message,
+    actorName,
+    message: formatTaskEventMessage({
+      eventType: row.event_type,
+      actorType: row.actor_type,
+      actorName,
+      metadata: row.metadata,
+    }),
   };
+}
+
+async function resolveTaskEventActorNames(rows: TaskEventRow[]): Promise<Map<string, string>> {
+  const profileRefs = rows.flatMap((row) => row.actor_id && row.actor_type !== "collector" ? [{
+    organizationId: row.organization_id,
+    actorId: row.actor_id,
+  }] : []);
+  const names = await resolveOrganizationActorNames(profileRefs);
+  const collectorRows = rows.filter((row) => row.actor_id && row.actor_type === "collector");
+  if (collectorRows.length === 0) return names;
+
+  const collectorIds = [...new Set(collectorRows.map((row) => row.actor_id as string))];
+  const organizationIds = [...new Set(collectorRows.map((row) => row.organization_id))];
+  const { data, error } = await supabase
+    .from("collectors")
+    .select("id, organization_id, name")
+    .in("id", collectorIds)
+    .in("organization_id", organizationIds);
+  if (error) throw error;
+  for (const collector of data ?? []) {
+    const name = getDisplayActorName(collector.name, "");
+    if (name) names.set(organizationActorKey(collector.organization_id, collector.id), name);
+  }
+  return names;
 }
 
 export async function fetchTaskEvents(taskId: string): Promise<TaskEvent[]> {
@@ -368,7 +456,9 @@ export async function fetchTaskEvents(taskId: string): Promise<TaskEvent[]> {
     .eq("task_id", taskId)
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(mapTaskEvent);
+  const rows = (data ?? []) as TaskEventRow[];
+  const actorNames = await resolveTaskEventActorNames(rows);
+  return rows.map((row) => mapTaskEvent(row, actorNames));
 }
 
 export async function fetchAllTaskEvents(): Promise<TaskEvent[]> {
@@ -377,7 +467,9 @@ export async function fetchAllTaskEvents(): Promise<TaskEvent[]> {
     .select("*")
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(mapTaskEvent);
+  const rows = (data ?? []) as TaskEventRow[];
+  const actorNames = await resolveTaskEventActorNames(rows);
+  return rows.map((row) => mapTaskEvent(row, actorNames));
 }
 
 export async function insertTaskEvent(

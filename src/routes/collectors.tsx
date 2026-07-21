@@ -38,6 +38,7 @@ import { useSubmissionStore } from "@/lib/submission-store";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleAlert as AlertCircle } from "lucide-react";
+import { getUserFacingError } from "@/lib/safe-display";
 
 export const Route = createFileRoute("/collectors")({
   validateSearch: (search: Record<string, unknown>): { query?: string } => ({
@@ -76,7 +77,7 @@ const STATUS_STYLE: Record<CollectorStatus, string> = {
 };
 
 function collectorSaveError(error: unknown): string | undefined {
-  if (!(error instanceof Error)) return undefined;
+  if (!(error instanceof Error)) return "The collector could not be saved. Please try again.";
   const message = error.message.toLowerCase();
   if (message.includes("collectors_organization_phone_e164_key") || message.includes("phone_e164")) {
     return "A collector with this phone number is already registered in this organization.";
@@ -84,7 +85,7 @@ function collectorSaveError(error: unknown): string | undefined {
   if (message.includes("row-level security") || message.includes("permission denied")) {
     return "Only organization administrators can add collectors.";
   }
-  return error.message;
+  return getUserFacingError(error, "The collector could not be saved. Please try again.");
 }
 
 function CollectorStatusBadge({ status }: { status: CollectorStatus }) {
@@ -175,7 +176,7 @@ function CollectorsPage() {
       await collectorStoreActions.editCollector(id, patch);
       toast.success("Collector updated");
     } catch (err) {
-      toast.error("Failed to update collector", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to update collector", { description: getUserFacingError(err, "The collector could not be updated. Please try again.") });
     } finally {
       setSaving(false);
     }
@@ -190,7 +191,7 @@ function CollectorsPage() {
       await collectorStoreActions.setStatus(id, next);
       toast.success(`${name} — ${STATUS_LABEL[next]}`);
     } catch (err) {
-      toast.error("Failed to update status", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to update status", { description: getUserFacingError(err, "The collector status could not be updated. Please try again.") });
     }
   }
 
@@ -201,7 +202,7 @@ function CollectorsPage() {
       await collectorStoreActions.setStatus(confirm.id, next);
       toast.success(`${confirm.name} — ${STATUS_LABEL[next]}`);
     } catch (err) {
-      toast.error("Failed to update status", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Failed to update status", { description: getUserFacingError(err, "The collector status could not be updated. Please try again.") });
     } finally {
       setConfirm(null);
     }
@@ -215,7 +216,7 @@ function CollectorsPage() {
       setSelected(null);
       setDetailOpen(false);
     } catch (err) {
-      toast.error("Could not delete collector", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Could not delete collector", { description: getUserFacingError(err, "The collector could not be deleted. Please try again.") });
     } finally {
       setDeleteTarget(null);
     }
@@ -305,7 +306,7 @@ function CollectorsPage() {
           <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center shadow-surface">
             <AlertCircle className="h-6 w-6 text-destructive" />
             <h3 className="mt-2 text-sm font-semibold text-destructive">Failed to load collectors</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{getUserFacingError(error, "Collectors could not be loaded. Please try again.")}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => collectorStoreActions.refresh()}>Retry</Button>
           </div>
         ) : collectors.length === 0 ? (
@@ -354,7 +355,7 @@ function CollectorsPage() {
                           </Avatar>
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-foreground">{c.name}</div>
-                            <div className="max-w-36 truncate font-mono text-[11px] text-muted-foreground">{c.id}</div>
+                            <div className="max-w-40 truncate text-xs text-muted-foreground">{c.collectorType ?? c.organization ?? "Field collector"}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -712,7 +713,7 @@ function CollectorDetailDrawer({
             </Avatar>
             <div className="min-w-0">
               <SheetTitle className="truncate">{collector.name}</SheetTitle>
-              <SheetDescription className="font-mono text-xs">{collector.id}</SheetDescription>
+              <SheetDescription>Field collector · {collector.zone} zone</SheetDescription>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">

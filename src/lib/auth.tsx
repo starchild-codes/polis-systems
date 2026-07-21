@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { resetOperationalState } from "@/lib/operational-state";
+import { getUserFacingError } from "@/lib/safe-display";
 
 export type UserRole = "admin" | "operator" | "pending";
 export type OrganizationRole = "admin" | "operator";
@@ -133,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       if (error) {
         setProfile(null);
-        setProfileError(error.message);
+        setProfileError(getUserFacingError(error, "Your profile could not be loaded. Please sign in again."));
       } else if (!data) {
         setProfile(null);
         setProfileError("Profile not found");
@@ -150,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle();
           if (!active) return;
           if (membershipError) {
-            setProfileError(membershipError.message);
+            setProfileError(getUserFacingError(membershipError, "Your organization access could not be verified."));
           } else if (membership) {
             setOrganizationMembership(membership as OrganizationMembership);
             const { data: organization, error: organizationError } = await supabase
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .eq("id", nextProfile.active_organization_id)
               .maybeSingle();
             if (!active) return;
-            if (organizationError) setProfileError(organizationError.message);
+            if (organizationError) setProfileError(getUserFacingError(organizationError, "Your organization could not be loaded."));
             else setOrganizationName(organization?.name ?? null);
           }
         }
@@ -181,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    return { error: error ? getUserFacingError(error, "Unable to sign in. Check your details and try again.") : null };
   }
 
   async function signUp(email: string, password: string, fullName?: string) {
@@ -194,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     return {
-      error: error?.message ?? null,
+      error: error ? getUserFacingError(error, "Unable to create the account. Please try again.") : null,
       requiresEmailConfirmation: !error && !data.session,
     };
   }
@@ -206,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirectTo: new URL("/login", window.location.origin).toString(),
       },
     });
-    return { error: error?.message ?? null };
+    return { error: error ? getUserFacingError(error, "Google sign-in could not be started. Please try again.") : null };
   }
 
   async function signOut() {

@@ -30,7 +30,6 @@ export interface TaskCsvRow {
 }
 
 const CSV_HEADERS = [
-  "Task ID",
   "Title",
   "Description",
   "Status",
@@ -47,7 +46,6 @@ const CSV_HEADERS = [
   "Created At",
   "Updated At",
   "Due At",
-  "Submission ID",
   "Submitted At",
   "Submission Status",
   "Quantity (kg)",
@@ -63,7 +61,6 @@ export function tasksToCsv(rows: TaskCsvRow[]): string {
     const c = r.collector;
     const s = r.submission;
     return [
-      t.id,
       t.title,
       t.description,
       t.status,
@@ -80,7 +77,6 @@ export function tasksToCsv(rows: TaskCsvRow[]): string {
       t.createdAt,
       t.updatedAt,
       t.dueAt,
-      s?.id ?? "",
       s?.submittedAt ?? "",
       s?.status ?? "",
       s?.quantityKg ?? "",

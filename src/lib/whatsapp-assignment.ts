@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getUserFacingError } from "@/lib/safe-display";
 
 interface AssignmentApiResponse {
   sent?: boolean;
@@ -27,7 +28,7 @@ export async function sendWhatsAppTaskAssignment(taskId: string): Promise<{
   });
   const payload = await response.json().catch(() => ({})) as AssignmentApiResponse;
   if (!response.ok) {
-    throw new Error(payload.error || "The WhatsApp assignment could not be sent.");
+    throw new Error(getUserFacingError(payload.error, "The WhatsApp assignment could not be sent."));
   }
 
   return {
