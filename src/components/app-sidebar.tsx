@@ -82,7 +82,7 @@ export function AppSidebar({ collapsed, onNavigate }: { collapsed: boolean; onNa
 
       {!collapsed && (
         <div className="border-t border-white/10 px-4 py-3 text-[11px] text-sidebar-foreground/55">
-          Bengaluru pilot · v0.1
+          Florida pilot · v0.1
         </div>
       )}
     </aside>

@@ -7,6 +7,7 @@ import type {
   TaskStatus,
 } from "@/lib/mock-data";
 import type { ReportFilters } from "@/lib/csv";
+import { getCollectorLanguageLabel } from "@/lib/collector-languages";
 
 type OperationsPdfInput = {
   tasks: Task[];
@@ -69,7 +70,7 @@ export function downloadOperationsPdf({ tasks, collectors, submissions, filters 
   const awaitingReview = tasks.filter((task) => task.status === "submitted").length;
   const approvedTasks = tasks.filter((task) => task.status === "approved").length;
   const estimatedKg = tasks.reduce((total, task) => total + task.estimatedWasteKg, 0);
-  const generatedAt = new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+  const generatedAt = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 
   doc.setFillColor(21, 121, 181);
   doc.rect(0, 0, 210, 31, "F");
@@ -160,7 +161,7 @@ export function downloadOperationsPdf({ tasks, collectors, submissions, filters 
       const collectorSubmissions = matchingSubmissions.filter((submission) => submission.collector === collector.name);
       const approved = collectorSubmissions.filter((submission) => submission.status === "approved").length;
       const approvalRate = collectorSubmissions.length ? Math.round((approved / collectorSubmissions.length) * 100) : 0;
-      return [collector.name, collector.zone, String(collectorTasks.length), String(approved), `${approvalRate}%`];
+      return [collector.name, collector.zone, getCollectorLanguageLabel(collector.preferredLanguage), String(collectorTasks.length), String(approved), `${approvalRate}%`];
     });
 
   doc.setFont("helvetica", "bold");
@@ -168,8 +169,8 @@ export function downloadOperationsPdf({ tasks, collectors, submissions, filters 
   doc.text("Collector performance", 14, cursorY);
   autoTable(doc, {
     startY: cursorY + 4,
-    head: [["Collector", "Zone", "Assigned", "Approved", "Approval rate"]],
-    body: collectorRows.length ? collectorRows : [["No collector assignments", "-", "0", "0", "0%"]],
+    head: [["Collector", "Zone", "Language", "Assigned", "Approved", "Approval rate"]],
+    body: collectorRows.length ? collectorRows : [["No collector assignments", "-", "-", "0", "0", "0%"]],
     theme: "grid",
     margin: { left: 14, right: 14 },
     styles: { fontSize: 8, cellPadding: 2.5, textColor: [51, 65, 85], lineColor: [221, 231, 239] },

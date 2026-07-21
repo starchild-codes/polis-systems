@@ -29,9 +29,9 @@ function SettingsPage() {
           <div className="settings-cluster surface-card overflow-hidden divide-y divide-border/80">
             <Section title="Organisation" description="Displayed on reports and collector messages.">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Organisation name"><Input defaultValue="Bengaluru Municipal Sanitation" /></Field>
-                <Field label="Region"><Input defaultValue="Bengaluru Urban, Karnataka" /></Field>
-                <Field label="Support email" className="sm:col-span-2"><Input defaultValue="ops@polissystems.example.in" type="email" /></Field>
+                <Field label="Organisation name"><Input defaultValue="Florida Pilot Operations" /></Field>
+                <Field label="Region"><Input defaultValue="Florida" /></Field>
+                <Field label="Support email" className="sm:col-span-2"><Input defaultValue="operations@polissystems.example" type="email" /></Field>
               </div>
             </Section>
 

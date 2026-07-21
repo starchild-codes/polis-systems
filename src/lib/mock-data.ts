@@ -46,12 +46,10 @@ export const COLLECTOR_STATUSES: CollectorStatus[] = ["active", "inactive", "sus
 export type CollectorType = "Individual" | "NGO Affiliated" | "Contractor" | "Municipal Staff";
 export const COLLECTOR_TYPES: CollectorType[] = ["Individual", "NGO Affiliated", "Contractor", "Municipal Staff"];
 
-export const PREFERRED_LANGUAGES = ["English", "Hindi", "Kannada", "Tamil", "Telugu", "Urdu"] as const;
-
 export interface Collector {
   id: string;
   name: string;
-  /** E.164-style phone number, e.g. "+919845012034" — unique across collectors. */
+  /** E.164-style phone number, e.g. "+13055550123" — unique within an organization. */
   phone: string;
   zone: Zone;
   status: CollectorStatus;

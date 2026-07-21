@@ -7,6 +7,7 @@ import type {
   WasteType,
   HotspotType,
 } from "@/lib/mock-data";
+import { getCollectorLanguageLabel } from "@/lib/collector-languages";
 
 // RFC-4180-compliant CSV escaping: wrap any field containing a comma, double-quote,
 // newline, or carriage return in double quotes, and double any embedded double quotes.
@@ -43,6 +44,7 @@ const CSV_HEADERS = [
   "Collector Phone",
   "Collector Type",
   "Collector Organization",
+  "Collector Preferred Language",
   "Created At",
   "Updated At",
   "Due At",
@@ -74,6 +76,7 @@ export function tasksToCsv(rows: TaskCsvRow[]): string {
       c?.phone ?? "",
       c?.collectorType ?? "",
       c?.organization ?? "",
+      getCollectorLanguageLabel(c?.preferredLanguage, ""),
       t.createdAt,
       t.updatedAt,
       t.dueAt,

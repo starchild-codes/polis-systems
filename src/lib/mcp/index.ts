@@ -8,6 +8,6 @@ export default defineMcp({
   title: "Polis Systems MCP",
   version: "0.1.0",
   instructions:
-    "Read-only tools that expose the Polis Systems sanitation operations demo dataset (Bengaluru pilot): collectors, cleanup tasks, and top-level operational KPIs. Use `get_operations_summary` first for an overview, then `list_tasks` or `list_collectors` to drill in with optional zone/status/priority filters.",
+    "Read-only tools that expose the Polis Systems sanitation operations demo dataset (Florida pilot): collectors, cleanup tasks, and top-level operational KPIs. Use `get_operations_summary` first for an overview, then `list_tasks` or `list_collectors` to drill in with optional zone/status/priority filters.",
   tools: [operationsSummaryTool, listTasksTool, listCollectorsTool],
 });

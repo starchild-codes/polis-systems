@@ -18,6 +18,7 @@ import type {
   Zone,
 } from "@/lib/mock-data";
 import { getUserFacingError } from "@/lib/safe-display";
+import { normalizeCollectorLanguageForStorage } from "@/lib/collector-languages";
 
 // ─── Store state ────────────────────────────────────────────────────────────
 
@@ -109,7 +110,7 @@ export const collectorStoreActions = {
       status: COLLECTOR_STATUS_DB_MAP[input.status],
       collector_type: input.collectorType,
       organization_affiliation: input.organization,
-      preferred_language: input.preferredLanguage,
+      preferred_language: normalizeCollectorLanguageForStorage(input.preferredLanguage),
       notes: input.internalNotes,
     };
     const collector = await insertCollector(row);
@@ -139,8 +140,13 @@ export const collectorStoreActions = {
       dbPatch.collector_type = patch.collectorType;
     if (patch.organization !== undefined)
       dbPatch.organization_affiliation = patch.organization;
-    if (patch.preferredLanguage !== undefined)
-      dbPatch.preferred_language = patch.preferredLanguage;
+    if (patch.preferredLanguage !== undefined) {
+      const currentLanguage = state.collectors.find((collector) => collector.id === id)?.preferredLanguage;
+      dbPatch.preferred_language = normalizeCollectorLanguageForStorage(
+        patch.preferredLanguage,
+        currentLanguage,
+      );
+    }
     if (patch.internalNotes !== undefined) dbPatch.notes = patch.internalNotes;
 
     await updateCollector(id, dbPatch);

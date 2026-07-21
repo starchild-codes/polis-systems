@@ -25,12 +25,18 @@ import {
 import { Plus, Search, X, ListFilter, MoveHorizontal as MoreHorizontal, Users, UserCheck, UserPlus, UserX, Phone, MapPin, Calendar, Pencil, Ban, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  COLLECTOR_STATUSES, COLLECTOR_TYPES, PREFERRED_LANGUAGES,
+  COLLECTOR_STATUSES, COLLECTOR_TYPES,
   computeCollectorCounts, computeCollectorStats, computeCollectorIsRecentlyActive,
   computeCollectorTaskHistory, formatFriendlyDate, formatFriendlyDateTime,
   isValidE164Phone, isPhoneNumberTaken,
   type Collector, type CollectorStatus, type CollectorType, type Zone,
 } from "@/lib/mock-data";
+import {
+  DEFAULT_COLLECTOR_LANGUAGE,
+  getCollectorLanguageLabel,
+  getCollectorLanguageOptions,
+  isCollectorLanguageValueAllowed,
+} from "@/lib/collector-languages";
 import { useCollectorStore, useCollectorStoreState, collectorStoreActions, type NewCollectorInput } from "@/lib/collector-store";
 import { useTaskStore } from "@/lib/task-store";
 import { FALLBACK_ZONES, useZones } from "@/lib/zone-store";
@@ -331,6 +337,7 @@ function CollectorsPage() {
                   <TableHead className="min-w-[180px]">Collector</TableHead>
                   <TableHead className="hidden md:table-cell">Phone</TableHead>
                   <TableHead>Zone</TableHead>
+                  <TableHead className="hidden xl:table-cell">Language</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Assigned</TableHead>
                   <TableHead className="text-right">Accepted</TableHead>
@@ -361,6 +368,9 @@ function CollectorsPage() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground tabular-nums">{c.phone}</TableCell>
                       <TableCell className="text-sm text-foreground">{c.zone}</TableCell>
+                      <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">
+                        {getCollectorLanguageLabel(c.preferredLanguage)}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <CollectorStatusBadge status={c.status} />
@@ -515,7 +525,7 @@ interface FormValues {
 
 const emptyForm: FormValues = {
   name: "", phone: "", zone: "", status: "pending",
-  collectorType: "", organization: "", preferredLanguage: "", internalNotes: "",
+  collectorType: "", organization: "", preferredLanguage: DEFAULT_COLLECTOR_LANGUAGE, internalNotes: "",
 };
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
@@ -561,10 +571,13 @@ function CollectorFormSheet({
     const e: FormErrors = {};
     if (!values.name.trim()) e.name = "Full name is required.";
     if (!values.phone.trim()) e.phone = "Phone number is required.";
-    else if (!isValidE164Phone(values.phone)) e.phone = "Use E.164 format, e.g. +919845012034.";
+    else if (!isValidE164Phone(values.phone)) e.phone = "Use E.164 format, e.g. +13055550123.";
     else if (isPhoneNumberTaken(values.phone, collectors, editing?.id)) e.phone = "This phone number is already registered.";
     if (!values.zone) e.zone = "Zone is required.";
     if (!values.status) e.status = "Status is required.";
+    if (!isCollectorLanguageValueAllowed(values.preferredLanguage, editing?.preferredLanguage)) {
+      e.preferredLanguage = "Select an available preferred language.";
+    }
     return e;
   }
 
@@ -605,8 +618,8 @@ function CollectorFormSheet({
             <Field label="Full name" error={errors.name} required>
               <Input value={values.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Ravi Kumar" />
             </Field>
-            <Field label="Phone number" error={errors.phone} hint="Include country code, e.g. +919845012034." required>
-              <Input value={values.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" inputMode="tel" />
+            <Field label="Phone number" error={errors.phone} hint="Include country code, e.g. +13055550123." required>
+              <Input value={values.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+1…" inputMode="tel" />
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Zone" error={errors.zone} required>
@@ -641,11 +654,13 @@ function CollectorFormSheet({
             <Field label="Organization affiliation">
               <Input value={values.organization} onChange={(e) => set("organization", e.target.value)} placeholder="NGO, contractor, or municipal department" />
             </Field>
-            <Field label="Preferred language">
+            <Field label="Preferred language" error={errors.preferredLanguage} hint="Used for future communication preferences.">
               <Select value={values.preferredLanguage} onValueChange={(v) => set("preferredLanguage", v)}>
                 <SelectTrigger><SelectValue placeholder="Select language" /></SelectTrigger>
                 <SelectContent>
-                  {PREFERRED_LANGUAGES.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  {getCollectorLanguageOptions(values.preferredLanguage).map((language) => (
+                    <SelectItem key={language.value} value={language.value}>{language.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
@@ -732,7 +747,7 @@ function CollectorDetailDrawer({
             <Detail icon={<MapPin className="h-3.5 w-3.5" />} label="Zone" value={collector.zone} />
             <Detail label="Collector type" value={collector.collectorType ?? "—"} />
             <Detail label="Organization" value={collector.organization ?? "—"} />
-            <Detail label="Preferred language" value={collector.preferredLanguage ?? "—"} />
+            <Detail label="Preferred language" value={getCollectorLanguageLabel(collector.preferredLanguage)} />
             <Detail icon={<Calendar className="h-3.5 w-3.5" />} label="Registered" value={formatFriendlyDate(collector.registeredAt)} />
             <Detail label="Last active" value={collector.lastActiveAt === "—" ? "—" : formatFriendlyDateTime(collector.lastActiveAt)} />
             <Detail label="Account status" value={STATUS_LABEL[collector.status]} />
