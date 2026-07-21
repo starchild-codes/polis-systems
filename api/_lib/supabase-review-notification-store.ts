@@ -35,10 +35,13 @@ function databaseError(error: { message?: string } | null, fallback: string): Er
 }
 
 export class SupabaseReviewNotificationStore implements ReviewNotificationStore {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(
+    private readonly supabase: SupabaseClient,
+    private readonly identitySupabase: SupabaseClient = supabase,
+  ) {}
 
   async authenticate(accessToken: string) {
-    const { data, error } = await this.supabase.auth.getUser(accessToken);
+    const { data, error } = await this.identitySupabase.auth.getUser(accessToken);
     if (error || !data.user) return null;
     return { id: data.user.id };
   }

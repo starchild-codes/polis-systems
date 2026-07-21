@@ -47,16 +47,18 @@ export default async function handler(
       .status(401)
       .setHeader("Content-Type", "application/json; charset=utf-8")
       .setHeader("Cache-Control", "private, no-store, max-age=0")
-      .send(JSON.stringify({ error: "Authentication required." }));
+      .send(JSON.stringify({ code: "unauthenticated", error: "Authentication required." }));
     return;
   }
 
   try {
     const config = loadWhatsAppServerConfig();
+    const identityClient = createWebhookSupabaseClient(config);
+    const serviceClient = createWebhookSupabaseClient(config);
     const result = await handleReviewNotificationRetry(
       { method: request.method, headers: request.headers, body: request.body },
       {
-        store: new SupabaseReviewNotificationStore(createWebhookSupabaseClient(config)),
+        store: new SupabaseReviewNotificationStore(serviceClient, identityClient),
         sender: new TwilioReviewNotificationSender(config),
         approvedContentSid: config.twilioReviewApprovedContentSid,
         rejectedContentSid: config.twilioReviewRejectedContentSid,

@@ -94,3 +94,16 @@ Sandbox recipients must join the sandbox before they can receive messages.
 Free-form messages outside the customer-service window are rejected by Twilio;
 production business-initiated outcomes require approved Content Templates.
 Template wording and variables must match the SIDs configured in the deployment.
+
+## Review troubleshooting
+
+An already-open browser tab from before Stage 4 may still contain the retired
+client-side `review_submission_safely` call. That RPC is intentionally no
+longer executable by `authenticated`, so the stale tab can show a raw
+permission-denied error. Reload the page to obtain the current bundle, which
+uses `POST /api/review/decision`; do not restore client RPC privileges.
+
+Submission quantity is authoritative in `submissions.quantity_estimate` and is
+free text so units such as `kg`, `bags`, or `litres` are preserved. Review shows
+that value in both the queue and detail drawer and uses `Quantity not provided`
+for blank historical rows.

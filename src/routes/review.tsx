@@ -37,6 +37,7 @@ import {
 } from "@/lib/review-actions";
 import { useTaskStore } from "@/lib/task-store";
 import { useCollectorStore } from "@/lib/collector-store";
+import { formatSubmissionQuantity } from "@/lib/submission-quantity";
 import type { Collector, Task } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/review")({
@@ -373,6 +374,7 @@ function ReviewPage() {
                   <TableHead>Zone</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead>Waste Type</TableHead>
+                  <TableHead>Quantity</TableHead>
                   <TableHead>Review Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -403,6 +405,9 @@ function ReviewPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {s.wasteType ?? "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-foreground">
+                      {formatSubmissionQuantity(s.quantityEstimate)}
                     </TableCell>
                     <TableCell><ReviewStatusBadge status={s.reviewStatus} /></TableCell>
                     <TableCell className="text-right">
@@ -672,7 +677,7 @@ function SubmissionDetailDrawer({
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Submission Evidence</h3>
             <div className="surface-card space-y-3 p-4">
               <DetailRow icon={<Weight className="h-3.5 w-3.5" />} label="Waste type" value={submission.wasteType ?? "—"} />
-              <DetailRow label="Quantity estimate" value={submission.quantityEstimate ?? "—"} />
+              <DetailRow label="Quantity" value={formatSubmissionQuantity(submission.quantityEstimate)} />
               {submission.submittedLatitude != null && submission.submittedLongitude != null && (
                 <DetailRow
                   icon={<MapPin className="h-3.5 w-3.5" />}
@@ -700,14 +705,14 @@ function SubmissionDetailDrawer({
                   )}
                 </div>
               )}
-              {submission.collectorNotes && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    <MessageSquare className="h-3.5 w-3.5" /> Collector notes
-                  </div>
-                  <p className="text-sm text-foreground">{submission.collectorNotes}</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <MessageSquare className="h-3.5 w-3.5" /> Collector notes
                 </div>
-              )}
+                <p className="break-words text-sm text-foreground">
+                  {submission.collectorNotes?.trim() || "Notes not provided"}
+                </p>
+              </div>
             </div>
           </section>
 

@@ -364,12 +364,12 @@ async function authenticateReviewer(
   | ReviewNotificationResponse
 > {
   const token = getBearerToken(request.headers);
-  if (!token) return jsonResponse(401, { error: "Authentication required." });
+  if (!token) return jsonResponse(401, { code: "unauthenticated", error: "Authentication required." });
   const user = await store.authenticate(token);
-  if (!user) return jsonResponse(401, { error: "Authentication required." });
+  if (!user) return jsonResponse(401, { code: "unauthenticated", error: "Authentication required." });
   const profile = await store.getProfile(user.id);
   if (!profile?.activeOrganizationId) {
-    return jsonResponse(403, { error: "An active organization is required." });
+    return jsonResponse(403, { code: "active_organization_required", error: "An active organization is required." });
   }
   const membership = await store.getMembership(user.id, profile.activeOrganizationId);
   if (
@@ -378,7 +378,7 @@ async function authenticateReviewer(
     || membership.organizationId !== profile.activeOrganizationId
     || !["admin", "operator"].includes(membership.role)
   ) {
-    return jsonResponse(403, { error: "Review access is required." });
+    return jsonResponse(403, { code: "forbidden", error: "Review access is required." });
   }
   return { user, profile, membership };
 }
@@ -395,12 +395,12 @@ export async function handleReviewDecision(
     return { ...jsonResponse(405, { error: "method_not_allowed" }), headers: { ...JSON_HEADERS, Allow: "POST" } };
   }
   const parsed = parseDecisionBody(request.body);
-  if (!parsed) return jsonResponse(400, { error: "A valid submission and review decision are required." });
+  if (!parsed) return jsonResponse(400, { code: "invalid_review", error: "A valid submission and review decision are required." });
   if (parsed.decision === "rejected" && !parsed.rejectionReason) {
-    return jsonResponse(400, { error: "A rejection reason is required." });
+    return jsonResponse(400, { code: "rejection_reason_required", error: "A rejection reason is required." });
   }
   if ((parsed.rejectionReason?.length || 0) > REJECTION_REASON_MAX_LENGTH) {
-    return jsonResponse(400, { error: `Rejection reason must be ${REJECTION_REASON_MAX_LENGTH} characters or fewer.` });
+    return jsonResponse(400, { code: "rejection_reason_too_long", error: `Rejection reason must be ${REJECTION_REASON_MAX_LENGTH} characters or fewer.` });
   }
 
   try {
@@ -409,7 +409,7 @@ export async function handleReviewDecision(
     const organizationId = auth.profile.activeOrganizationId as string;
     const submission = await dependencies.store.getSubmission(parsed.submissionId);
     if (!submission || submission.organizationId !== organizationId) {
-      return jsonResponse(404, { error: "Submission not found." });
+      return jsonResponse(404, { code: "submission_not_found", error: "Submission not found." });
     }
 
     const reviewed = await dependencies.store.reviewSubmission({
@@ -443,12 +443,24 @@ export async function handleReviewDecision(
         message: "Review saved. WhatsApp delivery is already being processed.",
       };
     } else {
-      delivery = await deliverReviewNotification(
-        reviewed.notificationId,
-        organizationId,
-        auth.user.id,
-        dependencies,
-      );
+      try {
+        delivery = await deliverReviewNotification(
+          reviewed.notificationId,
+          organizationId,
+          auth.user.id,
+          dependencies,
+        );
+      } catch {
+        // The transactional review has already committed. A claim or provider
+        // failure must never be presented as a failed approval/rejection.
+        dependencies.log?.({ status: "failed", errorCode: "notification_delivery_failed" });
+        delivery = {
+          notificationId: reviewed.notificationId,
+          status: "failed",
+          retryable: true,
+          message: "Review saved, but WhatsApp delivery could not be started. You can retry the notification.",
+        };
+      }
     }
     dependencies.log?.({ status: "reviewed" });
     return jsonResponse(200, {
@@ -458,14 +470,20 @@ export async function handleReviewDecision(
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : "review_decision_failed";
-    if (["review_decision_already_finalized", "review_task_not_submitted"].includes(code)) {
-      return jsonResponse(409, { error: "This submission has already been reviewed or is no longer reviewable." });
+    if (code === "review_authorization_failed") {
+      return jsonResponse(403, { code: "forbidden", error: "Review access is required." });
+    }
+    if (code === "review_submission_not_found") {
+      return jsonResponse(404, { code: "submission_not_found", error: "Submission not found." });
+    }
+    if (["review_decision_already_finalized", "review_task_not_submitted", "review_task_not_found"].includes(code)) {
+      return jsonResponse(409, { code: "not_reviewable", error: "This submission has already been reviewed or is no longer reviewable." });
     }
     if (["rejection_reason_required", "rejection_reason_too_long", "invalid_review_decision"].includes(code)) {
-      return jsonResponse(400, { error: "The review decision or rejection reason is invalid." });
+      return jsonResponse(400, { code: "invalid_review", error: "The review decision or rejection reason is invalid." });
     }
     dependencies.log?.({ status: "error", errorCode: "review_decision_failed" });
-    return jsonResponse(500, { error: "The review could not be saved. Please try again." });
+    return jsonResponse(500, { code: "database_transition_failed", error: "The review could not be saved. Please try again." });
   }
 }
 

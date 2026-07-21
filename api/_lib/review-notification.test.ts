@@ -27,6 +27,7 @@ function createHarness(overrides: {
   submissionMissing?: boolean;
   reviewStatus?: "pending" | "approved" | "rejected";
   transactionStatus?: "pending" | "sending" | "sent" | "failed";
+  reviewError?: string;
   claim?: ReviewNotificationClaim;
   claimError?: string;
   sendError?: boolean;
@@ -59,6 +60,7 @@ function createHarness(overrides: {
     }),
     reviewSubmission: async (input) => {
       calls.push({ name: "review", value: input });
+      if (overrides.reviewError) throw new Error(overrides.reviewError);
       return {
         result: overrides.reviewStatus && overrides.reviewStatus !== "pending"
           ? "already_reviewed"
@@ -280,6 +282,31 @@ describe("WhatsApp review outcome notifications", () => {
     assert.equal(harness.calls.find((call) => call.name === "fail")?.value, "twilio_send_failed");
     assert.equal(harness.calls.some((call) => call.name === "complete"), false);
     assert.doesNotMatch(JSON.stringify(harness.logs), /9876543210|Polis Systems Update/u);
+  });
+
+  it("does not misreport a post-commit notification permission failure as a failed review", async () => {
+    const harness = createHarness({ claimError: "notification_claim_failed" });
+    const response = await handleReviewDecision(
+      request({ submissionId, decision: "approved" }),
+      harness.dependencies,
+    );
+    assert.equal(response.status, 200);
+    assert.equal(payload(response).reviewSaved, true);
+    assert.equal(payload(response).notification.status, "failed");
+    assert.equal(payload(response).notification.retryable, true);
+    assert.match(payload(response).notification.message, /Review saved/u);
+    assert.doesNotMatch(response.body, /permission denied|schema|SQL/iu);
+  });
+
+  it("maps database transition failures to a stable safe code", async () => {
+    const harness = createHarness({ reviewError: "permission denied for table submissions" });
+    const response = await handleReviewDecision(
+      request({ submissionId, decision: "approved" }),
+      harness.dependencies,
+    );
+    assert.equal(response.status, 500);
+    assert.equal(payload(response).code, "database_transition_failed");
+    assert.doesNotMatch(response.body, /permission denied|submissions/iu);
   });
 
   it("does not retry after Twilio accepted a message but finalization is uncertain", async () => {
