@@ -8,6 +8,7 @@ export interface ReviewNotificationDelivery {
   status: "pending" | "sending" | "sent" | "failed";
   retryable: boolean;
   message: string;
+  errorCode?: string;
 }
 
 export interface ReviewDecisionOutcome {

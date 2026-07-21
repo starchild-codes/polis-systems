@@ -2,6 +2,10 @@ import { normalizeWhatsAppPhone } from "./phone.js";
 
 export const REJECTION_REASON_MAX_LENGTH = 500;
 export const REVIEW_NOTIFICATION_MAX_ATTEMPTS = 5;
+export const REJECTED_CONTENT_VARIABLES = {
+  taskTitle: "1",
+  rejectionReason: "2",
+} as const;
 const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -70,6 +74,7 @@ export interface ReviewNotificationMessage {
   body: string;
   contentSid?: string;
   contentVariables: Record<string, string>;
+  requiredTemplateVariables?: readonly string[];
 }
 
 export interface ReviewNotificationSender {
@@ -107,6 +112,7 @@ interface DeliveryResult {
   status: ReviewNotificationStatus;
   retryable: boolean;
   message: string;
+  errorCode?: string;
   alreadySent?: boolean;
 }
 
@@ -185,7 +191,8 @@ export function createReviewOutcomeMessage(
       contentVariables: { 1: title },
     };
   }
-  const reason = rejectionReason?.trim() || "No reason was provided.";
+  const reason = rejectionReason?.trim();
+  if (!reason) throw new Error("rejection_reason_missing");
   return {
     body: [
       "Polis Systems Update",
@@ -196,13 +203,25 @@ export function createReviewOutcomeMessage(
       "",
       "Please contact your organization administrator for next steps.",
     ].join("\n"),
-    contentVariables: { 1: title, 2: reason },
+    contentVariables: {
+      [REJECTED_CONTENT_VARIABLES.taskTitle]: title,
+      [REJECTED_CONTENT_VARIABLES.rejectionReason]: reason,
+    },
   };
 }
 
 function deliveryFailureMessage(errorCode: string): string {
   if (errorCode === "template_required") {
     return "Review saved, but WhatsApp requires an approved message template before this update can be sent.";
+  }
+  if (errorCode === "rejection_template_missing_reason_variable") {
+    return "Review saved, but the configured WhatsApp rejection template must include the rejection reason before this update can be sent.";
+  }
+  if (errorCode === "rejection_template_contract_unavailable") {
+    return "Review saved, but the WhatsApp rejection template could not be verified. You can retry after checking the template configuration.";
+  }
+  if (errorCode === "rejection_reason_missing") {
+    return "Review saved, but the stored rejection reason is unavailable, so no WhatsApp message was sent.";
   }
   if (["missing_collector_phone", "invalid_collector_phone"].includes(errorCode)) {
     return "Review saved, but the collector does not have a valid WhatsApp phone number.";
@@ -300,12 +319,13 @@ export async function deliverReviewNotification(
   }
 
   if (claim.notificationType === "submission_rejected" && !claim.rejectionReason?.trim()) {
-    await safelyMarkFailed(dependencies.store, claim.notificationId, "notification_context_invalid");
+    await safelyMarkFailed(dependencies.store, claim.notificationId, "rejection_reason_missing");
     return {
       notificationId: claim.notificationId,
       status: "failed",
       retryable: false,
-      message: deliveryFailureMessage("notification_context_invalid"),
+      errorCode: "rejection_reason_missing",
+      message: deliveryFailureMessage("rejection_reason_missing"),
     };
   }
 
@@ -321,16 +341,27 @@ export async function deliverReviewNotification(
       body: message.body,
       ...(contentSid ? { contentSid } : {}),
       contentVariables: message.contentVariables,
+      ...(contentSid && claim.notificationType === "submission_rejected"
+        ? { requiredTemplateVariables: Object.values(REJECTED_CONTENT_VARIABLES) }
+        : {}),
     });
     if (!sent.messageSid) throw new Error("missing_twilio_message_sid");
-  } catch {
-    await safelyMarkFailed(dependencies.store, claim.notificationId, "twilio_send_failed");
-    dependencies.log?.({ status: "failed", errorCode: "twilio_send_failed" });
+  } catch (error) {
+    const candidateCode = error instanceof Error ? error.message : "";
+    const errorCode = [
+      "rejection_template_missing_reason_variable",
+      "rejection_template_contract_unavailable",
+    ].includes(candidateCode)
+      ? candidateCode
+      : "twilio_send_failed";
+    await safelyMarkFailed(dependencies.store, claim.notificationId, errorCode);
+    dependencies.log?.({ status: "failed", errorCode });
     return {
       notificationId: claim.notificationId,
       status: "failed",
       retryable: claim.attemptCount < REVIEW_NOTIFICATION_MAX_ATTEMPTS,
-      message: deliveryFailureMessage("twilio_send_failed"),
+      errorCode,
+      message: deliveryFailureMessage(errorCode),
     };
   }
 

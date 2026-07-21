@@ -15,6 +15,7 @@ const notificationId = "22222222-2222-4222-8222-222222222222";
 const organizationId = "33333333-3333-4333-8333-333333333333";
 const userId = "44444444-4444-4444-8444-444444444444";
 const NOW = new Date("2026-07-21T10:00:00.000Z");
+const REGRESSION_REASON = "Before photo does not clearly show the assigned collection area.";
 
 function request(body: Record<string, unknown>, token = "valid-token") {
   return { method: "POST", headers: { authorization: `Bearer ${token}` }, body };
@@ -30,7 +31,7 @@ function createHarness(overrides: {
   reviewError?: string;
   claim?: ReviewNotificationClaim;
   claimError?: string;
-  sendError?: boolean;
+  sendError?: boolean | string;
   completeResult?: boolean;
   completeError?: boolean;
 } = {}) {
@@ -87,7 +88,9 @@ function createHarness(overrides: {
   const sender = {
     send: async (message: ReviewNotificationMessage) => {
       calls.push({ name: "send", value: message });
-      if (overrides.sendError) throw new Error("twilio unavailable");
+      if (overrides.sendError) {
+        throw new Error(typeof overrides.sendError === "string" ? overrides.sendError : "twilio unavailable");
+      }
       return { messageSid: "SM11111111111111111111111111111111" };
     },
   };
@@ -175,7 +178,7 @@ describe("WhatsApp review outcome notifications", () => {
     }
   });
 
-  it("stores and sends the rejection reason without claiming resubmission", async () => {
+  it("trims, stores, and sends the exact rejection reason without claiming resubmission", async () => {
     const harness = createHarness({
       claim: {
         result: "claimed",
@@ -183,22 +186,43 @@ describe("WhatsApp review outcome notifications", () => {
         notificationType: "submission_rejected",
         phoneE164: "+919876543210",
         taskTitle: "Central Market Cleanup",
-        rejectionReason: "After photo is unclear",
+        rejectionReason: REGRESSION_REASON,
         lastInteractionAt: new Date(NOW.getTime() - 60_000).toISOString(),
         attemptCount: 1,
       },
     });
     const response = await handleReviewDecision(
-      request({ submissionId, decision: "rejected", rejectionReason: "  After photo is unclear  " }),
+      request({ submissionId, decision: "rejected", rejectionReason: `  ${REGRESSION_REASON}  ` }),
       harness.dependencies,
     );
     assert.equal(response.status, 200);
     const reviewed = harness.calls.find((call) => call.name === "review")?.value as Record<string, unknown>;
-    assert.equal(reviewed.rejectionReason, "After photo is unclear");
+    assert.equal(reviewed.rejectionReason, REGRESSION_REASON);
     const sent = harness.calls.find((call) => call.name === "send")?.value as ReviewNotificationMessage;
-    assert.match(sent.body, /Reason: After photo is unclear/u);
+    assert.match(sent.body, new RegExp(`Reason: ${REGRESSION_REASON.replace(".", "\\.")}`, "u"));
+    assert.equal(sent.contentVariables[2], REGRESSION_REASON);
     assert.match(sent.body, /contact your organization administrator/u);
     assert.doesNotMatch(sent.body, /send new proof|reopen/iu);
+  });
+
+  it("accepts a 500-character reason and preserves ordinary punctuation", async () => {
+    const reason = `${"Evidence unclear; retry requested! ".repeat(16)}`.slice(0, 500);
+    assert.equal(reason.length, 500);
+    const harness = createHarness({
+      claim: {
+        result: "claimed", notificationId, notificationType: "submission_rejected",
+        phoneE164: "+919876543210", taskTitle: "Central Market Cleanup",
+        rejectionReason: reason, lastInteractionAt: NOW.toISOString(), attemptCount: 1,
+      },
+    });
+    const response = await handleReviewDecision(
+      request({ submissionId, decision: "rejected", rejectionReason: reason }),
+      harness.dependencies,
+    );
+    assert.equal(response.status, 200);
+    const sent = harness.calls.find((call) => call.name === "send")?.value as ReviewNotificationMessage;
+    assert.match(sent.body, /Evidence unclear; retry requested!/u);
+    assert.equal(sent.contentVariables[2], reason);
   });
 
   it("uses approval and rejection ContentSid templates when configured", async () => {
@@ -213,17 +237,60 @@ describe("WhatsApp review outcome notifications", () => {
       claim: {
         result: "claimed", notificationId, notificationType: "submission_rejected",
         phoneE164: "+919876543210", taskTitle: "Central Market Cleanup",
-        rejectionReason: "Photo mismatch", lastInteractionAt: null, attemptCount: 1,
+        rejectionReason: REGRESSION_REASON, lastInteractionAt: null, attemptCount: 1,
       },
     });
     rejected.dependencies.rejectedContentSid = "HXrejected";
     await handleReviewDecision(
-      request({ submissionId, decision: "rejected", rejectionReason: "Photo mismatch" }),
+      request({ submissionId, decision: "rejected", rejectionReason: REGRESSION_REASON }),
       rejected.dependencies,
     );
     const rejectedMessage = rejected.calls.find((call) => call.name === "send")?.value as ReviewNotificationMessage;
     assert.equal(rejectedMessage.contentSid, "HXrejected");
-    assert.deepEqual(rejectedMessage.contentVariables, { 1: "Central Market Cleanup", 2: "Photo mismatch" });
+    assert.deepEqual(rejectedMessage.contentVariables, { 1: "Central Market Cleanup", 2: REGRESSION_REASON });
+    assert.deepEqual(rejectedMessage.requiredTemplateVariables, ["1", "2"]);
+  });
+
+  it("keeps the review saved and reports a stable template contract error", async () => {
+    const harness = createHarness({
+      claim: {
+        result: "claimed", notificationId, notificationType: "submission_rejected",
+        phoneE164: "+919876543210", taskTitle: "Central Market Cleanup",
+        rejectionReason: REGRESSION_REASON, lastInteractionAt: null, attemptCount: 1,
+      },
+      sendError: "rejection_template_missing_reason_variable",
+    });
+    harness.dependencies.rejectedContentSid = "HXrejected";
+    const response = await handleReviewDecision(
+      request({ submissionId, decision: "rejected", rejectionReason: REGRESSION_REASON }),
+      harness.dependencies,
+    );
+    const result = payload(response);
+    assert.equal(response.status, 200);
+    assert.equal(result.reviewSaved, true);
+    assert.equal(result.notification.status, "failed");
+    assert.equal(result.notification.retryable, true);
+    assert.equal(result.notification.errorCode, "rejection_template_missing_reason_variable");
+    assert.match(result.notification.message, /template must include the rejection reason/u);
+    assert.equal(harness.calls.find((call) => call.name === "fail")?.value, "rejection_template_missing_reason_variable");
+    assert.equal(harness.calls.some((call) => call.name === "complete"), false);
+    assert.doesNotMatch(JSON.stringify(harness.logs), new RegExp(REGRESSION_REASON.replace(".", "\\."), "u"));
+  });
+
+  it("fails safely when a rejected outbox claim has no saved reason", async () => {
+    const harness = createHarness({
+      claim: {
+        result: "claimed", notificationId, notificationType: "submission_rejected",
+        phoneE164: "+919876543210", taskTitle: "Central Market Cleanup",
+        rejectionReason: null, lastInteractionAt: NOW.toISOString(), attemptCount: 1,
+      },
+    });
+    const response = await handleReviewNotificationRetry(request({ notificationId }), harness.dependencies);
+    const result = payload(response);
+    assert.equal(result.notification.status, "failed");
+    assert.equal(result.notification.retryable, false);
+    assert.equal(result.notification.errorCode, "rejection_reason_missing");
+    assert.equal(harness.calls.some((call) => call.name === "send"), false);
   });
 
   it("uses free-form only inside the customer-service window", async () => {
@@ -351,6 +418,24 @@ describe("WhatsApp review outcome notifications", () => {
     assert.equal(harness.calls.find((call) => call.name === "complete")?.value, "SM11111111111111111111111111111111");
   });
 
+  it("retry resolves and sends the authoritative saved rejection reason", async () => {
+    const harness = createHarness({
+      claim: {
+        result: "claimed", notificationId, notificationType: "submission_rejected",
+        phoneE164: "+919876543210", taskTitle: "Central Market Cleanup",
+        rejectionReason: REGRESSION_REASON, lastInteractionAt: NOW.toISOString(), attemptCount: 2,
+      },
+    });
+    harness.dependencies.rejectedContentSid = "HXrejected";
+    const response = await handleReviewNotificationRetry(request({ notificationId }), harness.dependencies);
+    assert.equal(response.status, 200);
+    const sent = harness.calls.find((call) => call.name === "send")?.value as ReviewNotificationMessage;
+    assert.match(sent.body, new RegExp(REGRESSION_REASON.replace(".", "\\."), "u"));
+    assert.equal(sent.contentVariables[2], REGRESSION_REASON);
+    assert.deepEqual(sent.requiredTemplateVariables, ["1", "2"]);
+    assert.equal(harness.calls.filter((call) => call.name === "send").length, 1);
+  });
+
   it("blocks unauthorized, cross-tenant, already-sent, concurrent, and exhausted retries", async () => {
     const unauthorized = createHarness();
     assert.equal((await handleReviewNotificationRetry(
@@ -385,5 +470,9 @@ describe("WhatsApp review outcome notifications", () => {
     assert.match(approved.body, /proof for "Task A" has been approved/u);
     const rejected = createReviewOutcomeMessage("submission_rejected", "Task B", "Unsafe proof");
     assert.match(rejected.body, /Reason: Unsafe proof/u);
+    assert.throws(
+      () => createReviewOutcomeMessage("submission_rejected", "Task B", null),
+      /rejection_reason_missing/u,
+    );
   });
 });

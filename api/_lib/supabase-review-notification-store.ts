@@ -11,6 +11,43 @@ import type {
 } from "./review-notification.js";
 import type { WhatsAppServerConfig } from "./supabase-webhook-store.js";
 
+export interface TwilioContentTemplate {
+  types?: Record<string, unknown>;
+}
+
+export interface TwilioReviewClient {
+  content: {
+    v1: {
+      contents(contentSid: string): {
+        fetch(): Promise<TwilioContentTemplate>;
+      };
+    };
+  };
+  messages: {
+    create(input: Record<string, unknown>): Promise<{ sid: string }>;
+  };
+}
+
+function bodyStrings(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(bodyStrings);
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => (
+    key === "body" && typeof child === "string" ? [child] : bodyStrings(child)
+  ));
+}
+
+export function contentTemplateRendersVariables(
+  template: TwilioContentTemplate,
+  requiredVariables: readonly string[],
+): boolean {
+  const bodies = bodyStrings(template.types);
+  return requiredVariables.every((variable) => {
+    const escaped = variable.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    const placeholder = new RegExp(`\\{\\{\\s*${escaped}\\s*\\}\\}`, "u");
+    return bodies.some((body) => placeholder.test(body));
+  });
+}
+
 const KNOWN_DATABASE_ERRORS = [
   "invalid_review_decision",
   "rejection_reason_required",
@@ -171,14 +208,31 @@ export class SupabaseReviewNotificationStore implements ReviewNotificationStore 
 }
 
 export class TwilioReviewNotificationSender implements ReviewNotificationSender {
-  private readonly client;
+  private readonly client: TwilioReviewClient;
 
-  constructor(private readonly config: WhatsAppServerConfig) {
-    this.client = twilio(config.twilioAccountSid, config.twilioAuthToken);
+  constructor(
+    private readonly config: WhatsAppServerConfig,
+    client?: TwilioReviewClient,
+  ) {
+    this.client = client ?? twilio(
+      config.twilioAccountSid,
+      config.twilioAuthToken,
+    ) as unknown as TwilioReviewClient;
   }
 
   async send(message: ReviewNotificationMessage): Promise<{ messageSid: string }> {
     const base = { from: this.config.twilioWhatsAppFrom, to: message.to };
+    if (message.contentSid && message.requiredTemplateVariables?.length) {
+      let template: TwilioContentTemplate;
+      try {
+        template = await this.client.content.v1.contents(message.contentSid).fetch();
+      } catch {
+        throw new Error("rejection_template_contract_unavailable");
+      }
+      if (!contentTemplateRendersVariables(template, message.requiredTemplateVariables)) {
+        throw new Error("rejection_template_missing_reason_variable");
+      }
+    }
     const sent = message.contentSid
       ? await this.client.messages.create({
           ...base,

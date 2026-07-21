@@ -78,6 +78,8 @@ describe("WhatsApp review notification migration", () => {
     assert.match(claim, /notification_not_claimable/iu);
     assert.match(claim, /notification_attempt_limit/iu);
     assert.match(claim, /membership\.organization_id = p_organization_id/iu);
+    assert.match(claim, /submission\.rejection_reason[\s\S]*INTO target_phone, target_title, target_reason/iu);
+    assert.match(claim, /RETURN QUERY SELECT 'claimed'[\s\S]*target_reason/iu);
   });
 
   it("makes sent rows terminal and records only safe delivery errors", async () => {

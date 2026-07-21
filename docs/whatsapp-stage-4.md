@@ -39,6 +39,26 @@ Optional approved Twilio Content Templates:
   - variable `1`: task title
   - variable `2`: rejection reason
 
+The approved rejected-outcome template must render both variables in a visible
+message body. Its body contract is:
+
+```text
+Polis Systems Update
+
+Your proof for “{{1}}” was not approved.
+
+Reason: {{2}}
+
+Please contact your organization administrator for next steps.
+```
+
+Before a rejected template is sent, the server fetches its Content resource and
+verifies that visible body text contains both `{{1}}` and `{{2}}`. If variable
+`2` is missing, the review remains saved, the outbox becomes retryable with the
+safe `rejection_template_missing_reason_variable` code, and no reasonless
+message is sent. Correct the approved template or configure a replacement SID,
+then use the existing deliberate Retry action. The SID itself is never logged.
+
 Do not hard-code Content SIDs. Without the appropriate ContentSid, free-form
 delivery is attempted only when the collector's latest WhatsApp interaction is
 within the 24-hour customer-service window. Outside that window the review is
