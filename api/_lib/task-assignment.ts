@@ -59,6 +59,7 @@ export interface TaskAssignmentStore {
     organizationId: string,
   ): Promise<AssignmentMembership | null>;
   getCollector(collectorId: string): Promise<AssignmentCollector | null>;
+  getLastInboundAt(collectorId: string, organizationId: string): Promise<string | null>;
   prepareAssignment(input: {
     taskId: string;
     collectorId: string;
@@ -78,6 +79,7 @@ export interface OutboundAssignmentMessage {
   to: string;
   body: string;
   contentVariables: Record<string, string>;
+  deliveryMode: "freeform" | "template";
 }
 
 export interface TaskAssignmentSender {
@@ -105,11 +107,14 @@ export interface AssignmentResponse {
 export interface TaskAssignmentDependencies {
   store: TaskAssignmentStore;
   sender: TaskAssignmentSender;
+  contentTemplateConfigured?: boolean;
   now?: () => Date;
   log?: (entry: SafeAssignmentLog) => void;
 }
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+const CUSTOMER_SERVICE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const SERVICE_WINDOW_SAFETY_MARGIN_MS = 5 * 60 * 1000;
 const TASK_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function jsonResponse(status: number, payload: Record<string, unknown>): AssignmentResponse {
@@ -143,6 +148,56 @@ function formatDueDate(value: string | null): string | null {
     timeStyle: "short",
     timeZone: "Asia/Kolkata",
   }).format(date);
+}
+
+export function isWhatsAppCustomerServiceWindowOpen(
+  lastInboundAt: string | null,
+  now: Date,
+): boolean {
+  if (!lastInboundAt) return false;
+  const interaction = new Date(lastInboundAt).getTime();
+  if (!Number.isFinite(interaction)) return false;
+  const age = now.getTime() - interaction;
+  return age >= -SERVICE_WINDOW_SAFETY_MARGIN_MS
+    && age <= CUSTOMER_SERVICE_WINDOW_MS - SERVICE_WINDOW_SAFETY_MARGIN_MS;
+}
+
+export type AssignmentDeliveryErrorCode =
+  | "assignment_template_required"
+  | "assignment_template_invalid"
+  | "assignment_sender_unavailable"
+  | "assignment_send_failed";
+
+export class AssignmentDeliveryError extends Error {
+  constructor(readonly safeCode: AssignmentDeliveryErrorCode) {
+    super(safeCode);
+    this.name = "AssignmentDeliveryError";
+  }
+}
+
+function deliveryFailureResponse(code: AssignmentDeliveryErrorCode): AssignmentResponse {
+  if (code === "assignment_template_required") {
+    return jsonResponse(409, {
+      error: "This collector is outside WhatsApp's 24-hour messaging window. Configure the approved task-assignment template, then retry.",
+      errorCode: code,
+    });
+  }
+  if (code === "assignment_template_invalid") {
+    return jsonResponse(502, {
+      error: "The approved WhatsApp task-assignment template does not match the required task fields. Check the template configuration and retry.",
+      errorCode: code,
+    });
+  }
+  if (code === "assignment_sender_unavailable") {
+    return jsonResponse(502, {
+      error: "The configured WhatsApp sender is unavailable. Check the Twilio sender configuration and retry.",
+      errorCode: code,
+    });
+  }
+  return jsonResponse(502, {
+    error: "The WhatsApp assignment could not be sent. Please try again.",
+    errorCode: code,
+  });
 }
 
 export function createTaskAssignmentMessage(task: AssignmentTask): {
@@ -254,6 +309,15 @@ export async function handleTaskAssignment(
     }
 
     const now = dependencies.now?.() || new Date();
+    const lastInboundAt = await dependencies.store.getLastInboundAt(
+      collector.id,
+      task.organizationId,
+    );
+    const serviceWindowOpen = isWhatsAppCustomerServiceWindowOpen(lastInboundAt, now);
+    if (!serviceWindowOpen && !dependencies.contentTemplateConfigured) {
+      log({ status: "rejected", taskId, errorCode: "assignment_template_required" });
+      return deliveryFailureResponse("assignment_template_required");
+    }
     const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
     const preparation = await dependencies.store.prepareAssignment({
       taskId,
@@ -286,6 +350,7 @@ export async function handleTaskAssignment(
       to: `whatsapp:${phoneE164}`,
       body: message.body,
       contentVariables: message.contentVariables,
+      deliveryMode: serviceWindowOpen ? "freeform" : "template",
     });
     if (!sent.messageSid) throw new Error("missing_twilio_message_sid");
     twilioAcceptedMessage = true;
@@ -299,7 +364,7 @@ export async function handleTaskAssignment(
 
     log({ status: "sent", taskId });
     return jsonResponse(200, { sent: true, duplicate: false, message: "WhatsApp assignment sent." });
-  } catch {
+  } catch (error) {
     if (preparedSessionId && !twilioAcceptedMessage) {
       try {
         await dependencies.store.failAssignment(preparedSessionId);
@@ -307,7 +372,10 @@ export async function handleTaskAssignment(
         // The original safe error is more useful than a cleanup failure.
       }
     }
-    log({ status: "error", taskId, errorCode: "assignment_send_failed" });
-    return jsonResponse(502, { error: "The WhatsApp assignment could not be sent. Please try again." });
+    const errorCode = error instanceof AssignmentDeliveryError
+      ? error.safeCode
+      : "assignment_send_failed";
+    log({ status: "error", taskId, errorCode });
+    return deliveryFailureResponse(errorCode);
   }
 }

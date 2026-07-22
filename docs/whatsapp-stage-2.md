@@ -27,8 +27,10 @@ phone. Sending is explicit; task creation, editing, assignment, and
 reassignment do not automatically contact Twilio.
 
 The free-form message includes only populated task labels and never includes an
-internal UUID. If `TWILIO_TASK_ASSIGNMENT_CONTENT_SID` is configured, the
-server uses that approved Twilio Content Template and supplies these variables:
+internal UUID. The server uses it when the collector's latest matched inbound
+WhatsApp message is safely inside the 24-hour customer-service window. Outside
+that window, `TWILIO_TASK_ASSIGNMENT_CONTENT_SID` is required and the server
+supplies these variables to the approved Twilio Content Template:
 
 1. task title
 2. zone
@@ -37,6 +39,11 @@ server uses that approved Twilio Content Template and supplies these variables:
 5. priority
 
 Do not prefix this optional variable with `VITE_`.
+
+The final five minutes of the window are reserved as a safety margin so a
+free-form request cannot cross Twilio's deadline while in flight. If the
+template is missing or rejected, the dashboard shows a safe, actionable error;
+raw Twilio responses, phone numbers, and message content are not exposed.
 
 The transactional preparation function maintains one session per collector,
 reuses that row safely, and refuses to send a second message for the same

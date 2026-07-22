@@ -62,6 +62,7 @@ export default async function handler(
       {
         store,
         sender: new TwilioTaskAssignmentSender(config),
+        contentTemplateConfigured: Boolean(config.twilioTaskAssignmentContentSid),
         log: writeSafeLog,
       },
     );

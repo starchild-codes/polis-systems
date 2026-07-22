@@ -11,6 +11,7 @@ import type {
   TaskAssignmentSender,
   TaskAssignmentStore,
 } from "./task-assignment.js";
+import { AssignmentDeliveryError } from "./task-assignment.js";
 import type { WhatsAppServerConfig } from "./supabase-webhook-store.js";
 
 interface TaskRow {
@@ -121,6 +122,20 @@ export class SupabaseTaskAssignmentStore implements TaskAssignmentStore {
       : null;
   }
 
+  async getLastInboundAt(collectorId: string, organizationId: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from("whatsapp_webhook_events")
+      .select("created_at")
+      .eq("collector_id", collectorId)
+      .eq("organization_id", organizationId)
+      .eq("event_type", "inbound")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error("collector_interaction_lookup_failed");
+    return (data?.created_at as string | undefined) || null;
+  }
+
   async prepareAssignment(input: {
     taskId: string;
     collectorId: string;
@@ -177,10 +192,14 @@ export class SupabaseTaskAssignmentStore implements TaskAssignmentStore {
 }
 
 export class TwilioTaskAssignmentSender implements TaskAssignmentSender {
-  private readonly client;
+  private readonly client: TwilioTaskAssignmentClient;
 
-  constructor(private readonly config: WhatsAppServerConfig) {
-    this.client = twilio(config.twilioAccountSid, config.twilioAuthToken);
+  constructor(
+    private readonly config: WhatsAppServerConfig,
+    client?: TwilioTaskAssignmentClient,
+  ) {
+    this.client = client
+      || (twilio(config.twilioAccountSid, config.twilioAuthToken) as unknown as TwilioTaskAssignmentClient);
   }
 
   async send(message: OutboundAssignmentMessage): Promise<{ messageSid: string }> {
@@ -188,8 +207,12 @@ export class TwilioTaskAssignmentSender implements TaskAssignmentSender {
       from: this.config.twilioWhatsAppFrom,
       to: message.to,
     };
-    const sent = this.config.twilioTaskAssignmentContentSid
-      ? await this.client.messages.create({
+    try {
+      if (message.deliveryMode === "template") {
+        if (!this.config.twilioTaskAssignmentContentSid) {
+          throw new AssignmentDeliveryError("assignment_template_required");
+        }
+        const sent = await this.client.messages.create({
           ...base,
           contentSid: this.config.twilioTaskAssignmentContentSid,
           contentVariables: JSON.stringify({
@@ -199,8 +222,31 @@ export class TwilioTaskAssignmentSender implements TaskAssignmentSender {
             4: message.contentVariables.due,
             5: message.contentVariables.priority,
           }),
-        })
-      : await this.client.messages.create({ ...base, body: message.body });
-    return { messageSid: sent.sid };
+        });
+        return { messageSid: sent.sid };
+      }
+
+      const sent = await this.client.messages.create({ ...base, body: message.body });
+      return { messageSid: sent.sid };
+    } catch (error) {
+      if (error instanceof AssignmentDeliveryError) throw error;
+      const twilioCode = Number((error as { code?: unknown } | null)?.code);
+      if (twilioCode === 63016) {
+        throw new AssignmentDeliveryError("assignment_template_required");
+      }
+      if ([63027, 63028, 63040, 63041, 63042].includes(twilioCode)) {
+        throw new AssignmentDeliveryError("assignment_template_invalid");
+      }
+      if (twilioCode === 63007) {
+        throw new AssignmentDeliveryError("assignment_sender_unavailable");
+      }
+      throw new AssignmentDeliveryError("assignment_send_failed");
+    }
   }
+}
+
+export interface TwilioTaskAssignmentClient {
+  messages: {
+    create(input: Record<string, unknown>): Promise<{ sid: string }>;
+  };
 }

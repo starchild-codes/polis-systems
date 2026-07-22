@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  AssignmentDeliveryError,
   createTaskAssignmentMessage,
   handleTaskAssignment,
+  isWhatsAppCustomerServiceWindowOpen,
   type AssignmentCollector,
   type AssignmentMembership,
   type AssignmentProfile,
@@ -61,6 +63,7 @@ function createStore(overrides: Partial<TaskAssignmentStore> = {}): TaskAssignme
     getTask: async () => task,
     getMembership: async () => membership,
     getCollector: async () => collector,
+    getLastInboundAt: async () => "2026-07-20T11:00:00.000Z",
     prepareAssignment: async () => ({ result: "prepared", sessionId: "session-1" }),
     completeAssignment: async () => true,
     failAssignment: async () => undefined,
@@ -116,11 +119,79 @@ describe("WhatsApp outbound task assignment", () => {
     });
     assert.equal(prepare.calls.length, 1);
     assert.equal(send.calls.length, 1);
+    assert.equal(send.calls[0]?.[0].deliveryMode, "freeform");
     assert.deepEqual(complete.calls, [[{
       sessionId: "session-1",
       outboundMessageSid: "SM-outbound-success",
       actorId: USER_ID,
     }]]);
+  });
+
+  it("uses free-form delivery when the collector messaged within 24 hours", async () => {
+    const send = tracked(async (_message: Parameters<TaskAssignmentSender["send"]>[0]) => ({
+      messageSid: "SM-freeform",
+    }));
+    const response = await handleTaskAssignment(request(), {
+      store: createStore({
+        getLastInboundAt: async () => "2026-07-19T12:05:00.000Z",
+      }),
+      sender: createSender(send),
+      contentTemplateConfigured: true,
+      now: () => new Date("2026-07-20T12:00:00.000Z"),
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(send.calls[0]?.[0].deliveryMode, "freeform");
+  });
+
+  it("uses the approved template outside the customer-service window", async () => {
+    const send = tracked(async (_message: Parameters<TaskAssignmentSender["send"]>[0]) => ({
+      messageSid: "SM-template",
+    }));
+    const response = await handleTaskAssignment(request(), {
+      store: createStore({
+        getLastInboundAt: async () => "2026-07-19T11:00:00.000Z",
+      }),
+      sender: createSender(send),
+      contentTemplateConfigured: true,
+      now: () => new Date("2026-07-20T12:00:00.000Z"),
+    });
+
+    assert.equal(response.status, 200);
+    assert.equal(send.calls[0]?.[0].deliveryMode, "template");
+  });
+
+  it("fails clearly before preparing a session when an out-of-window template is missing", async () => {
+    const prepare = tracked(createStore().prepareAssignment);
+    const send = tracked(async (_message: Parameters<TaskAssignmentSender["send"]>[0]) => ({
+      messageSid: "should-not-send",
+    }));
+    const response = await handleTaskAssignment(request(), {
+      store: createStore({
+        getLastInboundAt: async () => null,
+        prepareAssignment: prepare,
+      }),
+      sender: createSender(send),
+      contentTemplateConfigured: false,
+      now: () => new Date("2026-07-20T12:00:00.000Z"),
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal(JSON.parse(response.body).errorCode, "assignment_template_required");
+    assert.equal(prepare.calls.length, 0);
+    assert.equal(send.calls.length, 0);
+  });
+
+  it("keeps a five-minute safety margin at the end of the service window", () => {
+    const now = new Date("2026-07-20T12:00:00.000Z");
+    assert.equal(
+      isWhatsAppCustomerServiceWindowOpen("2026-07-19T12:06:00.000Z", now),
+      true,
+    );
+    assert.equal(
+      isWhatsAppCustomerServiceWindowOpen("2026-07-19T12:04:59.000Z", now),
+      false,
+    );
   });
 
   it("rejects an unauthenticated request", async () => {
@@ -234,6 +305,19 @@ describe("WhatsApp outbound task assignment", () => {
     assert.equal(response.status, 502);
     assert.doesNotMatch(response.body, /assignment_finalize_failed/);
     assert.equal(fail.calls.length, 0, "a Twilio-accepted message must not be made retryable");
+  });
+
+  it("returns a stable safe code for a rejected task template", async () => {
+    const fail = tracked(async (_sessionId: string) => undefined);
+    const response = await execute(
+      createStore({ failAssignment: fail }),
+      createSender(async () => {
+        throw new AssignmentDeliveryError("assignment_template_invalid");
+      }),
+    );
+    assert.equal(response.status, 502);
+    assert.equal(JSON.parse(response.body).errorCode, "assignment_template_invalid");
+    assert.deepEqual(fail.calls, [["session-1"]]);
   });
 
   it("logs only safe assignment metadata", async () => {
