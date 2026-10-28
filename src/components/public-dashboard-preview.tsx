@@ -49,7 +49,7 @@ export function PublicDashboardPreview({ compact = false }: { compact?: boolean 
   const [activeView, setActiveView] = useState<PreviewView>("overview");
 
   return (
-    <div className={cn(
+    <div data-dashboard-preview="read-only" className={cn(
       "overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-[0_30px_70px_-32px_rgba(15,43,82,0.35)]",
       compact ? "min-h-[34rem]" : "min-h-[min(46rem,78vh)]",
     )}>
