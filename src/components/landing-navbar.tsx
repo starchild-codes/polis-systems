@@ -26,10 +26,11 @@ export function LandingNavbar() {
   }, []);
 
   const navLinks = [
-    { href: "#about", label: "What we do" },
-    { href: "#how-it-works", label: "Workflow" },
-    { href: "#capabilities", label: "Capabilities" },
-    { href: "#impact", label: "Impact" },
+    { href: "/#about", label: "What we do" },
+    { href: "/#how-it-works", label: "Workflow" },
+    { href: "/demo", label: "Dashboard preview" },
+    { href: "/#capabilities", label: "Capabilities" },
+    { href: "/#impact", label: "Impact" },
   ];
 
   return (

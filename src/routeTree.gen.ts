@@ -16,6 +16,7 @@ import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectorsRouteImport } from './routes/collectors'
 import { Route as AwaitingApprovalRouteImport } from './routes/awaiting-approval'
@@ -62,6 +63,11 @@ const OverviewRoute = OverviewRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/reports': typeof ReportsRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/reports': typeof ReportsRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/awaiting-approval': typeof AwaitingApprovalRoute
   '/collectors': typeof CollectorsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/overview': typeof OverviewRoute
   '/reports': typeof ReportsRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/awaiting-approval'
     | '/collectors'
     | '/dashboard'
+    | '/demo'
     | '/login'
     | '/overview'
     | '/reports'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/'
     | '/awaiting-approval'
     | '/collectors'
+    | '/demo'
     | '/login'
     | '/overview'
     | '/reports'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/awaiting-approval'
     | '/collectors'
     | '/dashboard'
+    | '/demo'
     | '/login'
     | '/overview'
     | '/reports'
@@ -258,6 +270,7 @@ export interface RootRouteChildren {
   AwaitingApprovalRoute: typeof AwaitingApprovalRoute
   CollectorsRoute: typeof CollectorsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DemoRoute: typeof DemoRoute
   LoginRoute: typeof LoginRoute
   OverviewRoute: typeof OverviewRoute
   ReportsRoute: typeof ReportsRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -436,6 +456,7 @@ const rootRouteChildren: RootRouteChildren = {
   AwaitingApprovalRoute: AwaitingApprovalRoute,
   CollectorsRoute: CollectorsRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DemoRoute: DemoRoute,
   LoginRoute: LoginRoute,
   OverviewRoute: OverviewRoute,
   ReportsRoute: ReportsRoute,

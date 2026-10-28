@@ -163,7 +163,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
   const location = useRouterState({ select: (s) => s.location });
-  const isPublicRoute = location.pathname === "/" || location.pathname === "/login" || location.pathname === "/signup";
+  const isPublicRoute = location.pathname === "/"
+    || location.pathname === "/login"
+    || location.pathname === "/signup"
+    || location.pathname === "/demo";
 
   return (
     <div className="min-h-screen bg-background">

@@ -17,6 +17,7 @@ import {
 import { LandingNavbar } from "@/components/landing-navbar";
 import { LandingBrandReveal } from "@/components/landing-brand-reveal";
 import { BrandLogo } from "@/components/brand-logo";
+import { PublicDashboardPreview } from "@/components/public-dashboard-preview";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -119,6 +120,27 @@ function LandingPage() {
           </div>
         </section>
 
+        <section id="dashboard-preview" className="overflow-hidden border-y border-navy-100 bg-[#f4f7fb] py-20 lg:py-24">
+          <div className="mx-auto max-w-[90rem] px-3 sm:px-4 md:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <SectionIntro
+                eyebrow="Explore the platform"
+                title="See the full workflow before you get access."
+                description="Take a safe, read-only tour of Overview, Tasks, Review, Collectors, Reports, and Settings. The preview uses fictional records and never connects to a real organization workspace."
+              />
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link to="/demo" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark">
+                  Open full dashboard preview <ArrowRight className="h-4 w-4" />
+                </Link>
+                <span className="text-xs font-medium text-navy-500">No login · No live data · No operational access</span>
+              </div>
+            </div>
+            <div className="landing-section-reveal mt-10">
+              <PublicDashboardPreview compact />
+            </div>
+          </div>
+        </section>
+
         <section id="impact" className="border-y border-navy-100 bg-[linear-gradient(145deg,white,hsl(var(--navy-50)))]">
           <div className="landing-section-reveal mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-6 lg:gap-16 lg:px-8 lg:py-24">
             <div className="relative">
@@ -173,6 +195,7 @@ function LandingPage() {
             <a className="hover:text-primary" href="#about">About</a>
             <a className="hover:text-primary" href="#how-it-works">Workflow</a>
             <a className="hover:text-primary" href="#capabilities">Capabilities</a>
+            <Link className="hover:text-primary" to="/demo">Dashboard preview</Link>
             <Link className="hover:text-primary" to="/login">Log in</Link>
             <Link className="hover:text-primary" to="/signup">Sign up</Link>
           </nav>
