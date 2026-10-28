@@ -4,7 +4,7 @@ import { PublicDashboardPreview } from "@/components/public-dashboard-preview";
 export const Route = createFileRoute("/demo")({
   head: () => ({
     meta: [
-      { title: "Dashboard Preview — Polis Systems" },
+      { title: "Interactive Dashboard Demo — Polis Systems" },
       { name: "description", content: "Try the Polis Systems operations workflow in a safe, fictional dashboard sandbox." },
     ],
   }),
