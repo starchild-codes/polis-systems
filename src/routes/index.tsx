@@ -125,12 +125,12 @@ function LandingPage() {
             <div className="mx-auto max-w-7xl">
               <SectionIntro
                 eyebrow="Explore the platform"
-                title="See the full workflow before you get access."
-                description="Take a safe, read-only tour of Overview, Tasks, Review, Collectors, Reports, and Settings. The preview uses fictional records and never connects to a real organization workspace."
+                title="Try the full workflow before you get access."
+                description="Use a safe dashboard sandbox to create and assign tasks, simulate field communication, review proof, inspect collectors, and download a sample report. It uses fictional records and never connects to a real organization workspace."
               />
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link to="/demo" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-dark">
-                  Open full dashboard preview <ArrowRight className="h-4 w-4" />
+                  Open interactive dashboard demo <ArrowRight className="h-4 w-4" />
                 </Link>
                 <span className="text-xs font-medium text-navy-500">No login · No live data · No operational access</span>
               </div>
